@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DISC Assessment — Hackea</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{--blue:#0090F8;--text-main:#2A2A2A;--text-body:#404040;--bg-slide:#EBECF0;--surface:#F3F3F3;--white:#FFFFFF;--black:#000000;--d-color:#E53935;--i-color:#FFC107;--s-color:#43A047;--c-color:#1E88E5;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:var(--bg-slide);color:var(--text-body);min-height:100vh}
+.header{background:var(--white);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.06);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:40px;height:40px;position:relative}
+.logo-icon::before,.logo-icon::after{content:'';position:absolute;border:2.5px solid var(--blue);border-radius:50%}
+.logo-icon::before{width:36px;height:36px;top:2px;left:2px}.logo-icon::after{width:20px;height:20px;top:10px;left:10px}
+.logo-dot{width:8px;height:8px;background:var(--blue);border-radius:50%;position:absolute;top:16px;left:16px}
+.logo-text{font-family:'Poppins',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px}.logo-text span{color:var(--blue)}
+.tabs-nav{display:flex;gap:4px;background:var(--bg-slide);border-radius:10px;padding:4px}
+.tab-btn{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;transition:all .25s;background:transparent;color:var(--text-body)}
+.tab-btn.active{background:var(--blue);color:var(--white);box-shadow:0 2px 8px rgba(0,144,248,.3)}.tab-btn:hover:not(.active){background:rgba(0,144,248,.1)}
+.tab-btn .badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:10px;background:var(--d-color);color:white;font-size:11px;font-weight:700;margin-left:6px;padding:0 6px}
+.tab-btn.active .badge{background:white;color:var(--blue)}
+.main{max-width:960px;margin:0 auto;padding:24px 20px 60px}.tab-content{display:none}.tab-content.active{display:block}
+.card{background:var(--white);border-radius:var(--radius);padding:28px 32px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.05);position:relative}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue);border-radius:var(--radius) 0 0 var(--radius)}
+h1{font-family:'Poppins',sans-serif;font-weight:700;font-size:32px;color:var(--text-main);margin-bottom:8px}
+h2{font-family:'Poppins',sans-serif;font-weight:600;font-size:22px;color:var(--blue);margin-bottom:12px}
+h3{font-family:'Poppins',sans-serif;font-weight:600;font-size:18px;color:var(--text-main);margin-bottom:8px}
+p{line-height:1.65;margin-bottom:10px;font-size:15px}
+.instructions{background:linear-gradient(135deg,rgba(0,144,248,.06),rgba(0,144,248,.02));border:1px solid rgba(0,144,248,.15);border-radius:var(--radius);padding:24px 28px;margin-bottom:24px}
+.disc-legend{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
+.disc-legend-item{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px}
+.disc-legend-item.d{background:rgba(229,57,53,.1);color:#C62828}.disc-legend-item.i{background:rgba(255,193,7,.15);color:#F57F17}
+.disc-legend-item.s{background:rgba(67,160,71,.1);color:#2E7D32}.disc-legend-item.c{background:rgba(30,136,229,.1);color:#1565C0}
+.legend-dot{width:14px;height:14px;border-radius:50%}
+.group-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--bg-slide)}
+.group-number{font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;width:36px;height:36px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.group-label{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--text-body)}
+.group-check{color:var(--s-color);font-size:18px;margin-left:auto;display:none}.group-check.done{display:inline}
+.option-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;margin-bottom:4px;transition:background .2s}
+.option-row:hover{background:var(--surface)}.option-word{font-size:15px;font-weight:500;color:var(--text-main)}
+.radio-group{display:flex;align-items:center;gap:6px}.radio-group label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600}
+input[type="radio"]{-webkit-appearance:none;appearance:none;width:20px;height:20px;border:2px solid #ccc;border-radius:50%;cursor:pointer;transition:all .2s;position:relative}
+input[type="radio"]:checked.most{border-color:#43A047;background:#43A047}input[type="radio"]:checked.least{border-color:#E53935;background:#E53935}
+input[type="radio"]:checked::after{content:'';position:absolute;width:8px;height:8px;background:white;border-radius:50%;top:4px;left:4px}
+.progress-wrap{margin:20px 0}.progress-bar-bg{height:8px;background:var(--bg-slide);border-radius:4px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),#00c6ff);border-radius:4px;transition:width .4s ease}
+.progress-text{font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;color:var(--blue);margin-top:6px;text-align:right}
+.btn{font-family:'Poppins',sans-serif;font-weight:600;font-size:15px;padding:14px 36px;border:none;border-radius:10px;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--blue);color:white}.btn-primary:hover{background:#007ad6;box-shadow:0 4px 16px rgba(0,144,248,.35);transform:translateY(-1px)}
+.btn-secondary{background:var(--bg-slide);color:var(--text-main)}.btn-secondary:hover{background:#dddee3}
+.btn-success{background:var(--s-color);color:white}.btn-success:hover{background:#388E3C;box-shadow:0 4px 16px rgba(67,160,71,.35);transform:translateY(-1px)}
+.btn-danger{background:var(--d-color);color:white}.btn-danger:hover{background:#C62828}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-sm{padding:10px 20px;font-size:13px}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.score-card{padding:20px;border-radius:var(--radius);text-align:center}
+.score-card.d{background:linear-gradient(135deg,rgba(229,57,53,.08),rgba(229,57,53,.02));border:1px solid rgba(229,57,53,.2)}
+.score-card.i{background:linear-gradient(135deg,rgba(255,193,7,.1),rgba(255,193,7,.03));border:1px solid rgba(255,193,7,.25)}
+.score-card.s{background:linear-gradient(135deg,rgba(67,160,71,.08),rgba(67,160,71,.02));border:1px solid rgba(67,160,71,.2)}
+.score-card.c{background:linear-gradient(135deg,rgba(30,136,229,.08),rgba(30,136,229,.02));border:1px solid rgba(30,136,229,.2)}
+.score-letter{font-family:'Poppins',sans-serif;font-weight:700;font-size:42px}
+.score-letter.d{color:var(--d-color)}.score-letter.i{color:var(--i-color)}.score-letter.s{color:var(--s-color)}.score-letter.c{color:var(--c-color)}
+.score-value{font-family:'Poppins',sans-serif;font-weight:600;font-size:28px;color:var(--text-main)}
+.score-label{font-size:13px;color:#888;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.score-bar-bg{height:6px;background:rgba(0,0,0,.06);border-radius:3px;margin-top:10px}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.score-bar-fill.d{background:var(--d-color)}.score-bar-fill.i{background:var(--i-color)}.score-bar-fill.s{background:var(--s-color)}.score-bar-fill.c{background:var(--c-color)}
+.chart-container{display:flex;justify-content:center;margin:20px 0}canvas{max-width:100%}
+.profile-box{padding:24px;border-radius:var(--radius);background:linear-gradient(135deg,rgba(0,144,248,.05),rgba(0,144,248,.01));border:1px solid rgba(0,144,248,.15);margin:20px 0}
+.profile-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;color:var(--text-main);margin-bottom:12px}
+.profile-combo{font-family:'Poppins',sans-serif;font-weight:700;font-size:28px;margin-bottom:16px;display:flex;gap:4px}
+.trait-section{margin:16px 0}.trait-title{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:8px}
+.trait-list{display:flex;flex-wrap:wrap;gap:6px}.trait-tag{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600}
+.interp-section{margin:20px 0;padding:20px 24px;background:var(--white);border-radius:var(--radius);border-left:4px solid var(--blue)}
+.interp-section h3{color:var(--blue);margin-bottom:10px}.interp-section ul{padding-left:18px}.interp-section li{margin-bottom:6px;line-height:1.55;font-size:14.5px}
+.fit-indicator{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px}
+.fit-high{background:rgba(67,160,71,.12);color:#2E7D32}.fit-medium{background:rgba(255,193,7,.15);color:#F57F17}.fit-low{background:rgba(229,57,53,.1);color:#C62828}
+.select-wrap{margin:16px 0}.select-wrap label{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--text-main);display:block;margin-bottom:6px}
+.select-styled{width:100%;padding:12px 16px;font-family:Arial,sans-serif;font-size:15px;border:2px solid var(--bg-slide);border-radius:10px;color:var(--text-main);background:var(--white);cursor:pointer}
+.select-styled:focus{outline:none;border-color:var(--blue)}
+.name-input{width:100%;padding:12px 16px;font-family:Arial,sans-serif;font-size:15px;border:2px solid var(--bg-slide);border-radius:10px;color:var(--text-main);margin:8px 0 16px}
+.name-input:focus{outline:none;border-color:var(--blue)}
+.hidden{display:none !important}
+.submitted-item{background:var(--white);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.05);border-left:4px solid var(--blue);cursor:pointer;transition:box-shadow .2s}
+.submitted-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.si-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.si-name{font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;color:var(--text-main)}.si-time{font-size:13px;color:#999}
+.si-scores{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.si-score-pill{display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:16px;font-family:'Poppins',sans-serif;font-weight:700;font-size:14px}
+.si-score-pill.d{background:rgba(229,57,53,.1);color:var(--d-color)}.si-score-pill.i{background:rgba(255,193,7,.12);color:#E6A800}
+.si-score-pill.s{background:rgba(67,160,71,.1);color:var(--s-color)}.si-score-pill.c{background:rgba(30,136,229,.1);color:var(--c-color)}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200}
+.confirm-box{background:white;border-radius:16px;padding:32px;max-width:440px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.confirm-box h2{color:var(--s-color);margin-bottom:8px}.confirm-actions{display:flex;gap:12px;justify-content:center;margin-top:20px}
+.empty-state{text-align:center;padding:60px 20px;color:#aaa}.empty-state .empty-icon{font-size:48px;margin-bottom:16px}
+.actions-row{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--blue);cursor:pointer;margin-bottom:16px;padding:8px 0;border:none;background:none}
+.back-link:hover{text-decoration:underline}
+.footer{text-align:center;padding:24px;font-size:13px;color:#999}.footer a{color:var(--blue);text-decoration:none;font-weight:600}
+.deco-circles{position:fixed;top:-60px;right:-60px;width:180px;height:180px;opacity:.06;pointer-events:none;z-index:0}
+.deco-circles::before,.deco-circles::after{content:'';position:absolute;border:3px solid var(--blue);border-radius:50%}
+.deco-circles::before{width:160px;height:160px;top:10px;left:10px}.deco-circles::after{width:100px;height:100px;top:40px;left:40px}
+.loading-spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,144,248,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text-main);color:white;padding:14px 24px;border-radius:10px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;z-index:300;animation:slideUp .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.refresh-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(0,144,248,.06);border-radius:10px;margin-bottom:16px;font-size:14px;color:var(--text-body)}
+.refresh-bar button{background:none;border:none;color:var(--blue);font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.refresh-bar button:hover{text-decoration:underline}
+@media(max-width:640px){.header{padding:12px 16px;flex-direction:column;gap:12px}.main{padding:16px 12px 40px}.card{padding:20px 18px}h1{font-size:24px}.results-grid{grid-template-columns:1fr}.tab-btn{padding:8px 16px;font-size:13px}.option-row{gap:8px;padding:8px 10px}}
+@media print{.header,.tabs-nav,.btn,.footer,.deco-circles,.back-link,.refresh-bar,.actions-row{display:none}.tab-content{display:block !important}.card,.submitted-item{box-shadow:none;border:1px solid #ddd;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="deco-circles"></div>
+<header class="header">
+<div class="logo"><div class="logo-icon"><div class="logo-dot"></div></div><div class="logo-text">HACK<span>EA</span></div></div>
+<nav class="tabs-nav">
+<button class="tab-btn active" id="tabBtnTest" onclick="switchTab('test')">📋 Realizar Test</button>
+<button class="tab-btn" id="tabBtnReviewer" onclick="switchTab('reviewer')">🔍 Panel Revisor <span class="badge hidden" id="badgeCount">0</span></button>
+</nav>
+</header>
+<main class="main">
+<!-- TAB TEST -->
+<div id="tab-test" class="tab-content active">
+<div class="card" id="introSection">
+<h1>Evaluación DISC</h1>
+<p>Descubre tu perfil de comportamiento y cómo te comunicas, tomas decisiones y trabajas en equipo.</p>
+<div class="disc-legend">
+<div class="disc-legend-item d"><div class="legend-dot" style="background:var(--d-color)"></div>D — Dominancia</div>
+<div class="disc-legend-item i"><div class="legend-dot" style="background:var(--i-color)"></div>I — Influencia</div>
+<div class="disc-legend-item s"><div class="legend-dot" style="background:var(--s-color)"></div>S — Estabilidad</div>
+<div class="disc-legend-item c"><div class="legend-dot" style="background:var(--c-color)"></div>C — Cumplimiento</div>
+</div>
+<div class="instructions">
+<h3>📝 Instrucciones</h3>
+<p style="margin-bottom:14px">El test tiene <strong>28 grupos de 4 conductas</strong>. En cada grupo debes elegir:</p>
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:#43A047;display:inline-block"></span><strong>MÁS = la conducta que MÁS te representa</strong></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:#E53935;display:inline-block"></span><strong>MENOS = la conducta que MENOS te representa</strong></div>
+</div>
+<ul style="padding-left:18px;margin-top:6px">
+<li>No hay respuestas buenas ni malas. Responde con honestidad.</li>
+<li>Elige basándote en cómo <em>eres normalmente</em>, no cómo te gustaría ser.</li>
+<li>En cada grupo marca un MÁS y un MENOS en opciones <em>distintas</em>.</li>
+<li>No pienses demasiado: tu primera reacción suele ser la más precisa.</li>
+<li>Duración estimada: 10-15 minutos.</li>
+</ul>
+</div>
+<div>
+<label style="font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--text-main)">Tu nombre completo <span style="color:var(--d-color)">*</span></label>
+<input type="text" id="testName" class="name-input" placeholder="Ej: María González">
+</div>
+<button class="btn btn-primary" onclick="startTest()">Comenzar Test →</button>
+</div>
+<div id="questionsSection" class="hidden">
+<div class="card">
+<h2 style="margin-bottom:4px">Grupos de Conductas</h2>
+<div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:4px">
+<span style="width:14px;height:14px;border-radius:50%;background:#43A047;display:inline-block"></span> Más
+<span style="width:14px;height:14px;border-radius:50%;background:#E53935;display:inline-block;margin-left:8px"></span> Menos
+</div>
+<div class="progress-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div><div class="progress-text" id="progressText">0 / 28 completados</div></div>
+<div id="groupsContainer"></div>
+<div style="text-align:center;margin-top:24px"><button class="btn btn-success" id="submitBtn" disabled onclick="submitTest()">✅ Enviar Resultados</button></div>
+</div>
+</div>
+</div>
+<!-- TAB REVIEWER -->
+<div id="tab-reviewer" class="tab-content">
+<div id="reviewerList">
+<div class="card">
+<h1 style="margin:0">Panel del Revisor</h1>
+<p style="margin-top:8px">Los resultados aparecen aquí cuando alguien completa el test. Haz clic en uno para ver la interpretación completa.</p>
+<div class="select-wrap" style="margin-top:12px">
+<label>🎯 Filtro de cargo (orienta la interpretación):</label>
+<select class="select-styled" id="revRoleFilter" onchange="renderSubmittedList()">
+<option value="">— Sin filtro de cargo —</option>
+<option value="lider">Líder / Gerente / Jefatura</option>
+<option value="comercial">Comercial / Ventas</option>
+<option value="admin">Administrativo / Soporte</option>
+<option value="tecnico">Técnico / Especialista</option>
+<option value="creativo">Creativo / Diseño / Marketing</option>
+<option value="operativo">Operativo / Terreno</option>
+<option value="rrhh">Recursos Humanos / Capacitación</option>
+<option value="analista">Analista / Datos / Finanzas</option>
+<option value="atencion">Atención al Cliente / Servicio</option>
+<option value="proyecto">Gestión de Proyectos</option>
+</select>
+</div>
+</div>
+<div class="refresh-bar">
+<span id="lastRefresh">Última actualización: --</span>
+<button onclick="loadResults()">🔄 Actualizar</button>
+</div>
+<div id="submittedList"></div>
+</div>
+<div id="reviewerDetail" class="hidden"></div>
+</div>
+</main>
+<footer class="footer">Herramienta DISC · <a href="mailto:info@hackea.pro">HACK<span style="color:var(--blue)">EA</span></a> · info@hackea.pro</footer>
+<div class="confirm-overlay hidden" id="confirmOverlay">
+<div class="confirm-box">
+<div style="font-size:48px;margin-bottom:12px">✅</div>
+<h2>¡Test enviado!</h2>
+<p id="confirmMsg">Tus resultados han sido enviados al revisor.</p>
+<p style="font-size:14px;color:#888;margin-top:4px">El test se reiniciará para la siguiente persona.</p>
+<div class="confirm-actions"><button class="btn btn-primary" onclick="closeConfirmAndReset()">Entendido</button></div>
+</div>
+</div>
+
+<script>
+// ============================================================
+// ⚠️  CONFIGURACIÓN SUPABASE — Reemplazar con tus datos
+// ============================================================
+const SUPABASE_URL = 'https://btsdnrzmyshzfoybqpar.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0c2RucnpteXNoemZveWJxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTA3ODMsImV4cCI6MjA5MjgyNjc4M30.W449tsl57_83EPhLRTDjn13pLf5EU5q9EWF1ddnCg-s';
+// ============================================================
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GROUPS=[{id:1,items:[{w:"Enérgico/a",t:"D"},{w:"Sociable",t:"I"},{w:"Paciente",t:"S"},{w:"Perfeccionista",t:"C"}]},{id:2,items:[{w:"Decidido/a",t:"D"},{w:"Entusiasta",t:"I"},{w:"Confiable",t:"S"},{w:"Analítico/a",t:"C"}]},{id:3,items:[{w:"Competitivo/a",t:"D"},{w:"Alegre",t:"I"},{w:"Leal",t:"S"},{w:"Preciso/a",t:"C"}]},{id:4,items:[{w:"Directo/a",t:"D"},{w:"Comunicativo/a",t:"I"},{w:"Predecible",t:"S"},{w:"Cuidadoso/a",t:"C"}]},{id:5,items:[{w:"Atrevido/a",t:"D"},{w:"Optimista",t:"I"},{w:"Comprensivo/a",t:"S"},{w:"Disciplinado/a",t:"C"}]},{id:6,items:[{w:"Dominante",t:"D"},{w:"Persuasivo/a",t:"I"},{w:"Amable",t:"S"},{w:"Cauteloso/a",t:"C"}]},{id:7,items:[{w:"Exigente",t:"D"},{w:"Expresivo/a",t:"I"},{w:"Tranquilo/a",t:"S"},{w:"Meticuloso/a",t:"C"}]},{id:8,items:[{w:"Firme",t:"D"},{w:"Carismático/a",t:"I"},{w:"Relajado/a",t:"S"},{w:"Sistemático/a",t:"C"}]},{id:9,items:[{w:"Aventurero/a",t:"D"},{w:"Vivaz",t:"I"},{w:"Modesto/a",t:"S"},{w:"Riguroso/a",t:"C"}]},{id:10,items:[{w:"Persistente",t:"D"},{w:"Encantador/a",t:"I"},{w:"Cooperador/a",t:"S"},{w:"Detallista",t:"C"}]},{id:11,items:[{w:"Resolutivo/a",t:"D"},{w:"Motivador/a",t:"I"},{w:"Estable",t:"S"},{w:"Lógico/a",t:"C"}]},{id:12,items:[{w:"Independiente",t:"D"},{w:"Influyente",t:"I"},{w:"Considerado/a",t:"S"},{w:"Reflexivo/a",t:"C"}]},{id:13,items:[{w:"Orientado/a a resultados",t:"D"},{w:"Inspirador/a",t:"I"},{w:"Buen/a oyente",t:"S"},{w:"Organizado/a",t:"C"}]},{id:14,items:[{w:"Determinado/a",t:"D"},{w:"Conversador/a",t:"I"},{w:"Diplomático/a",t:"S"},{w:"Reservado/a",t:"C"}]},{id:15,items:[{w:"Valiente",t:"D"},{w:"Popular",t:"I"},{w:"Pacificador/a",t:"S"},{w:"Formal",t:"C"}]},{id:16,items:[{w:"Ambicioso/a",t:"D"},{w:"Espontáneo/a",t:"I"},{w:"Servicial",t:"S"},{w:"Metódico/a",t:"C"}]},{id:17,items:[{w:"Pionero/a",t:"D"},{w:"Sociable",t:"I"},{w:"Tolerante",t:"S"},{w:"Exacto/a",t:"C"}]},{id:18,items:[{w:"Asertivo/a",t:"D"},{w:"Confiado/a",t:"I"},{w:"Gentil",t:"S"},{w:"Prudente",t:"C"}]},{id:19,items:[{w:"Audaz",t:"D"},{w:"Animado/a",t:"I"},{w:"Generoso/a",t:"S"},{w:"Convencional",t:"C"}]},{id:20,items:[{w:"Emprendedor/a",t:"D"},{w:"Convincente",t:"I"},{w:"Constante",t:"S"},{w:"Perfeccionista",t:"C"}]},{id:21,items:[{w:"Franco/a",t:"D"},{w:"Efusivo/a",t:"I"},{w:"Ecuánime",t:"S"},{w:"Minucioso/a",t:"C"}]},{id:22,items:[{w:"Competidor/a",t:"D"},{w:"Jovial",t:"I"},{w:"Contenido/a",t:"S"},{w:"Normativo/a",t:"C"}]},{id:23,items:[{w:"Vigoroso/a",t:"D"},{w:"Demostrativo/a",t:"I"},{w:"Predecible",t:"S"},{w:"Escrupuloso/a",t:"C"}]},{id:24,items:[{w:"Inquieto/a",t:"D"},{w:"Versátil",t:"I"},{w:"Complaciente",t:"S"},{w:"Puntual",t:"C"}]},{id:25,items:[{w:"Comandante",t:"D"},{w:"Promotor/a",t:"I"},{w:"Mediador/a",t:"S"},{w:"Evaluador/a",t:"C"}]},{id:26,items:[{w:"Intrépido/a",t:"D"},{w:"Impulsivo/a",t:"I"},{w:"Calmado/a",t:"S"},{w:"Calculador/a",t:"C"}]},{id:27,items:[{w:"Tenaz",t:"D"},{w:"Magnético/a",t:"I"},{w:"Solidario/a",t:"S"},{w:"Crítico/a",t:"C"}]},{id:28,items:[{w:"Seguro/a de sí",t:"D"},{w:"Alegre",t:"I"},{w:"Apacible",t:"S"},{w:"Precavido/a",t:"C"}]}];
+
+const PROFILES={D:{name:"Dominancia",color:"#E53935",desc:"Personas orientadas a resultados, directas y decididas. Buscan el control, enfrentan desafíos y toman decisiones rápidas.",strengths:["Toma de decisiones rápida","Orientación a resultados","Liderazgo natural","Resolución de problemas","Iniciativa y proactividad"],challenges:["Puede ser impaciente","Demasiado directo/a","Puede descuidar detalles","Dificultad para delegar","Baja tolerancia a la ineficiencia"],communication:"Directo, breve y orientado a la acción. Evitar rodeos.",motivators:"Retos, autonomía, resultados visibles, nuevas oportunidades.",stressors:"Perder el control, rutina, lentitud, burocracia."},I:{name:"Influencia",color:"#FFC107",desc:"Personas entusiastas, optimistas y sociables. Disfrutan influir en otros, trabajar en equipo y generar un ambiente positivo.",strengths:["Comunicación efectiva","Capacidad de motivar","Creatividad e innovación","Networking natural","Ambiente positivo"],challenges:["Puede faltarle seguimiento","Evita conflictos","Puede ser desorganizado/a","Decisiones emocionales","Dificultad con tareas repetitivas"],communication:"Entusiasta, abierto y participativo. Darle espacio para expresarse.",motivators:"Reconocimiento, interacción social, variedad, ambiente divertido.",stressors:"Aislamiento, rechazo social, tareas rutinarias, ambientes hostiles."},S:{name:"Estabilidad",color:"#43A047",desc:"Personas pacientes, confiables y cooperadoras. Valoran la armonía, la consistencia y las relaciones estables.",strengths:["Trabajo en equipo excepcional","Confiabilidad","Escucha activa","Paciencia","Lealtad organizacional"],challenges:["Resistencia al cambio","Dificultad para decir no","Evita confrontaciones","Lentitud decisional","Puede subestimarse"],communication:"Calmado, sincero y empático. Dar tiempo para procesar.",motivators:"Seguridad, armonía, reconocimiento sincero, estabilidad.",stressors:"Cambios bruscos, conflictos, presión excesiva, incertidumbre."},C:{name:"Cumplimiento",color:"#1E88E5",desc:"Personas analíticas, precisas y orientadas a la calidad. Buscan exactitud, siguen procedimientos y valoran la información detallada.",strengths:["Atención al detalle","Pensamiento analítico","Estándares de calidad altos","Planificación rigurosa","Cumplimiento de normas"],challenges:["Parálisis por análisis","Demasiado crítico/a","Dificultad para delegar","Percibido/a como frío/a","Perfeccionismo excesivo"],communication:"Estructurado, con datos y evidencia. Ser preciso y preparado.",motivators:"Calidad, precisión, conocimiento, procesos claros.",stressors:"Ambigüedad, improvisación, errores, críticas a su trabajo."}};
+
+const COMBO_DESC={DI:{name:"Líder Inspirador/a",desc:"Combina orientación a resultados con capacidad de influir y motivar."},DIS:{name:"Líder Equilibrado/a",desc:"Impulsa resultados, motiva personas y mantiene la armonía."},DC:{name:"Estratega Exigente",desc:"Orientado/a a resultados con alta exigencia de calidad."},DIC:{name:"Director/a Completo/a",desc:"Perfil ejecutivo: decisión, comunicación y rigor analítico."},DS:{name:"Líder Estable",desc:"Firmeza con empatía. Toma decisiones pero cuida al equipo."},DSC:{name:"Gestor/a Integral",desc:"Acción, estabilidad y rigor."},ID:{name:"Promotor/a Decidido/a",desc:"Influencia con determinación. Excelente para roles comerciales."},IS:{name:"Facilitador/a",desc:"Comunicativo/a y empático/a. Ideal para mediación y capacitación."},ISC:{name:"Asesor/a Confiable",desc:"Comunicación, paciencia y rigor."},IC:{name:"Comunicador/a Analítico/a",desc:"Creatividad con precisión e innovación con fundamento técnico."},IDS:{name:"Líder Carismático/a",desc:"Influye, decide y sostiene."},IDC:{name:"Ejecutivo/a Dinámico/a",desc:"Influencia, determinación y análisis."},SD:{name:"Soporte Resolutivo",desc:"Estabilidad con capacidad de acción."},SI:{name:"Armonizador/a",desc:"Empático/a y comunicativo/a."},SC:{name:"Especialista Confiable",desc:"Consistencia con precisión."},SID:{name:"Integrador/a de Equipos",desc:"Empatía, comunicación y acción."},SIC:{name:"Coordinador/a Empático/a",desc:"Paciente, comunicativo/a y detallista."},SDC:{name:"Operador/a Eficiente",desc:"Estabilidad, decisión y control."},CD:{name:"Analista Resolutivo/a",desc:"Precisión con capacidad de acción."},CI:{name:"Innovador/a Metódico/a",desc:"Creatividad fundamentada en datos."},CS:{name:"Profesional Metódico/a",desc:"Precisión con paciencia."},CID:{name:"Arquitecto/a de Soluciones",desc:"Análisis, comunicación y acción."},CIS:{name:"Consultor/a Integral",desc:"Análisis profundo con comunicación y empatía."},CDS:{name:"Controlador/a Estratégico/a",desc:"Rigor, decisión y estabilidad."},CSI:{name:"Planificador/a Empático/a",desc:"Rigor metodológico con empatía."},CSD:{name:"Supervisor/a de Calidad",desc:"Control, estabilidad y firmeza."},CDI:{name:"Director/a Técnico/a",desc:"Liderazgo con base analítica."}};
+
+const ROLE_FIT={lider:{label:"Líder / Gerente / Jefatura",ideal:{D:"alto",I:"medio-alto",S:"medio",C:"medio"},needs:["Toma de decisiones","Visión estratégica","Comunicación","Gestión de resultados"],tips:{D:{high:"Excelente para impulsar resultados; cuidar el trato con el equipo.",low:"Podría tener dificultades para tomar decisiones difíciles."},I:{high:"Gran capacidad de motivar; cuidar seguimiento.",low:"Podría tener dificultades para generar compromiso."},S:{high:"Genera estabilidad; podría resistir cambios necesarios.",low:"Se adapta al cambio pero podría generar inestabilidad."},C:{high:"Gestión rigurosa; cuidar no paralizar por análisis.",low:"Podría descuidar controles importantes."}}},comercial:{label:"Comercial / Ventas",ideal:{D:"medio-alto",I:"alto",S:"medio",C:"bajo-medio"},needs:["Persuasión","Resiliencia","Cierre de negocios","Relacionamiento"],tips:{D:{high:"Excelente para cerrar ventas; cuidar relación largo plazo.",low:"Podría faltarle agresividad comercial."},I:{high:"Natural para ventas relacionales; cuidar seguimiento.",low:"Dificultades para generar rapport."},S:{high:"Buen servicio post-venta; podría ser lento/a para cerrar.",low:"Ágil pero podría descuidar fidelización."},C:{high:"Presentaciones impecables; podría perder oportunidades.",low:"Cierra rápido pero podría descuidar detalles."}}},admin:{label:"Administrativo / Soporte",ideal:{D:"bajo-medio",I:"medio",S:"alto",C:"alto"},needs:["Organización","Consistencia","Atención al detalle","Trabajo en equipo"],tips:{D:{high:"Puede frustrarse con tareas rutinarias.",low:"Se adapta bien a tareas estructuradas."},I:{high:"Buen trato; cuidar precisión.",low:"Podría aislarse."},S:{high:"Ideal para el rol; confiable.",low:"Podría buscar cambios frecuentes."},C:{high:"Excelente atención al detalle.",low:"Podría cometer errores."}}},tecnico:{label:"Técnico / Especialista",ideal:{D:"medio",I:"bajo-medio",S:"medio",C:"alto"},needs:["Conocimiento profundo","Resolución de problemas","Precisión","Autonomía"],tips:{D:{high:"Resuelve rápido; cuidar que no salte pasos.",low:"Metódico pero podría demorar en urgencias."},I:{high:"Comunica bien lo técnico; cuidar profundidad.",low:"Se enfoca pero dificultades para explicar."},S:{high:"Consistente en procesos técnicos.",low:"Se adapta pero podría perder consistencia."},C:{high:"Perfecto para detalle y calidad.",low:"Podría descuidar estándares."}}},creativo:{label:"Creativo / Diseño / Marketing",ideal:{D:"medio",I:"alto",S:"bajo-medio",C:"medio"},needs:["Innovación","Comunicación visual","Tendencias","Flexibilidad"],tips:{D:{high:"Impulsa proyectos; cuidar proceso del equipo.",low:"Podría faltarle iniciativa disruptiva."},I:{high:"Natural para roles creativos.",low:"Podría faltarle chispa."},S:{high:"Da consistencia; podría resistir experimentar.",low:"Abierto/a a experimentar; cuidar consistencia."},C:{high:"Cuida calidad; podría frenar innovación.",low:"Innovador/a pero podría descuidar calidad."}}},operativo:{label:"Operativo / Terreno",ideal:{D:"medio-alto",I:"medio",S:"alto",C:"medio-alto"},needs:["Protocolos","Resistencia","Supervisión","Seguridad"],tips:{D:{high:"Toma iniciativa; cuidar protocolos.",low:"Sigue instrucciones pero podría faltarle reacción."},I:{high:"Buen trato; cuidar concentración.",low:"Se enfoca pero podría aislarse."},S:{high:"Confiable; ideal.",low:"Podría aburrirse con rutina."},C:{high:"Cumple protocolos rigurosamente.",low:"Podría descuidar procedimientos."}}},rrhh:{label:"Recursos Humanos / Capacitación",ideal:{D:"medio",I:"alto",S:"alto",C:"medio"},needs:["Empatía","Comunicación","Gestión de conflictos","Normativa"],tips:{D:{high:"Implementa decisiones difíciles; cuidar empatía.",low:"Podría evitar decisiones difíciles."},I:{high:"Excelente para capacitación y clima.",low:"Dificultades para crear confianza."},S:{high:"Genera seguridad; escucha activa natural.",low:"Podría ser poco empático/a."},C:{high:"Domina normativa; cuidar rigidez.",low:"Podría descuidar aspectos legales."}}},analista:{label:"Analista / Datos / Finanzas",ideal:{D:"bajo-medio",I:"bajo",S:"medio",C:"alto"},needs:["Precisión numérica","Pensamiento crítico","Detalle","Análisis"],tips:{D:{high:"Resuelve rápido pero podría sacrificar precisión.",low:"Se toma el tiempo para analizar con rigor."},I:{high:"Comunica bien resultados; cuidar profundidad.",low:"Se enfoca en datos; mejorar presentación."},S:{high:"Consistente y metódico/a.",low:"Se adapta pero podría perder consistencia."},C:{high:"Perfil ideal; rigurosidad natural.",low:"Podría pasar por alto inconsistencias."}}},atencion:{label:"Atención al Cliente / Servicio",ideal:{D:"bajo-medio",I:"alto",S:"alto",C:"medio"},needs:["Empatía","Paciencia","Resolución","Comunicación"],tips:{D:{high:"Resuelve rápido; cuidar calidez.",low:"Paciente pero podría demorar."},I:{high:"Trato natural; excelente fidelización.",low:"Servicio funcional pero sin calidez."},S:{high:"Paciencia excepcional.",low:"Podría perder la paciencia."},C:{high:"Resuelve con precisión; cuidar frialdad.",low:"Rápido pero podría dar info incompleta."}}},proyecto:{label:"Gestión de Proyectos",ideal:{D:"alto",I:"medio-alto",S:"medio",C:"alto"},needs:["Planificación","Liderazgo transversal","Plazos","Control de calidad"],tips:{D:{high:"Impulsa avance; cuidar gestión de personas.",low:"Problemas para presionar plazos."},I:{high:"Excelente con stakeholders; cuidar seguimiento.",low:"Problemas para alinear equipos."},S:{high:"Da estabilidad; podría resistir cambios.",low:"Se adapta pero podría generar incertidumbre."},C:{high:"Controla calidad rigurosamente.",low:"Podría descuidar documentación."}}}};
+
+let answers={},completedGroups=0,submittedResults=[];
+
+function switchTab(tab){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');document.getElementById('tabBtnTest').classList.toggle('active',tab==='test');document.getElementById('tabBtnReviewer').classList.toggle('active',tab==='reviewer');if(tab==='reviewer')loadResults();}
+
+function startTest(){const name=document.getElementById('testName').value.trim();if(!name){alert('Por favor ingresa tu nombre para continuar.');return;}document.getElementById('introSection').classList.add('hidden');document.getElementById('questionsSection').classList.remove('hidden');renderGroups();window.scrollTo(0,0);}
+
+function renderGroups(){const c=document.getElementById('groupsContainer');c.innerHTML='';GROUPS.forEach(g=>{const div=document.createElement('div');div.className='group-container';let h='<div class="group-header"><div class="group-number">'+g.id+'</div><div class="group-label">Grupo '+g.id+' de 28</div><span class="group-check" id="check-'+g.id+'">✓</span></div>';g.items.forEach((item,idx)=>{h+='<div class="option-row"><div class="option-word">'+item.w+'</div><div class="radio-group"><label>Más</label><input type="radio" class="most" name="most-'+g.id+'" value="'+idx+'" onchange="handleAnswer('+g.id+')"></div><div class="radio-group"><label>Menos</label><input type="radio" class="least" name="least-'+g.id+'" value="'+idx+'" onchange="handleAnswer('+g.id+')"></div></div>';});div.innerHTML=h;c.appendChild(div);});}
+
+function handleAnswer(gid){const most=document.querySelector('input[name="most-'+gid+'"]:checked');const least=document.querySelector('input[name="least-'+gid+'"]:checked');if(most&&least){if(most.value===least.value){alert('Debes elegir opciones diferentes para MÁS y MENOS.');least.checked=false;return;}answers[gid]={most:parseInt(most.value),least:parseInt(least.value)};document.getElementById('check-'+gid).classList.add('done');}updateProgress();}
+
+function updateProgress(){completedGroups=Object.keys(answers).length;const pct=Math.round((completedGroups/28)*100);document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressText').textContent=completedGroups+' / 28 completados';document.getElementById('submitBtn').disabled=completedGroups<28;}
+
+async function submitTest(){
+  if(completedGroups<28){alert('Debes completar los 28 grupos.');return;}
+  const scores={D:0,I:0,S:0,C:0};
+  GROUPS.forEach(g=>{const a=answers[g.id];if(a)scores[g.items[a.most].t]+=1;});
+  const name=document.getElementById('testName').value.trim();
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span> Enviando...';
+  const {error}=await supabase.from('disc_results').insert({nombre:name,d_score:scores.D,i_score:scores.I,s_score:scores.S,c_score:scores.C});
+  if(error){alert('Error al guardar: '+error.message);btn.disabled=false;btn.textContent='✅ Enviar Resultados';return;}
+  document.getElementById('confirmMsg').textContent=name+', tus resultados han sido enviados al revisor.';
+  document.getElementById('confirmOverlay').classList.remove('hidden');
+}
+
+function closeConfirmAndReset(){document.getElementById('confirmOverlay').classList.add('hidden');answers={};completedGroups=0;document.getElementById('testName').value='';document.getElementById('questionsSection').classList.add('hidden');document.getElementById('introSection').classList.remove('hidden');window.scrollTo(0,0);}
+
+function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+// ========== LOAD FROM SUPABASE ==========
+async function loadResults(){
+  const {data,error}=await supabase.from('disc_results').select('*').order('created_at',{ascending:false});
+  if(error){showToast('Error al cargar: '+error.message);return;}
+  submittedResults=data.map(r=>({id:r.id,name:r.nombre,scores:{D:r.d_score,I:r.i_score,S:r.s_score,C:r.c_score},timestamp:r.created_at,timeLabel:formatTime(new Date(r.created_at))}));
+  updateBadge();renderSubmittedList();
+  document.getElementById('lastRefresh').textContent='Última actualización: '+new Date().toLocaleTimeString('es-CL');
+}
+
+function formatTime(d){return d.toLocaleString('es-CL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function updateBadge(){const b=document.getElementById('badgeCount');b.textContent=submittedResults.length;b.classList.toggle('hidden',submittedResults.length===0);}
+
+function renderSubmittedList(){
+  document.getElementById('reviewerDetail').classList.add('hidden');document.getElementById('reviewerList').classList.remove('hidden');
+  const container=document.getElementById('submittedList');const role=document.getElementById('revRoleFilter').value;
+  if(submittedResults.length===0){container.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Aún no hay resultados.</p><p style="font-size:14px;margin-top:8px">Cuando alguien complete el test, presiona 🔄 Actualizar para ver los nuevos resultados.</p></div>';return;}
+  let html='';submittedResults.forEach(function(r,idx){
+    const combo=getCombo(r.scores);const ck=combo.slice(0,Math.min(combo.length,3)).join('');const ci=COMBO_DESC[ck]||COMBO_DESC[combo.slice(0,2).join('')]||{name:PROFILES[combo[0]].name};
+    let fitHtml='';if(role&&ROLE_FIT[role]){const fs=calcFitScore(r.scores,ROLE_FIT[role]);const fc=fs>=2.5?'fit-high':fs>=1.8?'fit-medium':'fit-low';const fl=fs>=2.5?'✅ Buen ajuste':fs>=1.8?'⚡ Ajuste parcial':'⚠️ Brecha';fitHtml='<span class="fit-indicator '+fc+'">'+fl+'</span>';}
+    html+='<div class="submitted-item" onclick="showDetail('+idx+')"><div class="si-header"><div><div class="si-name">'+r.name+'</div><div style="font-size:13px;color:#888;margin-top:2px">'+ci.name+' · '+combo.join('')+'</div></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+fitHtml+'<div class="si-time">'+r.timeLabel+'</div></div></div><div class="si-scores"><div class="si-score-pill d">D '+r.scores.D+'</div><div class="si-score-pill i">I '+r.scores.I+'</div><div class="si-score-pill s">S '+r.scores.S+'</div><div class="si-score-pill c">C '+r.scores.C+'</div></div></div>';
+  });container.innerHTML=html;
+}
+
+function showDetail(idx){
+  const r=submittedResults[idx];const scores=r.scores;const combo=getCombo(scores);const primary=combo[0];const profile=PROFILES[primary];
+  const ck=combo.slice(0,Math.min(combo.length,3)).join('');const ci=COMBO_DESC[ck]||COMBO_DESC[combo.slice(0,2).join('')]||{name:profile.name,desc:profile.desc};
+  const role=document.getElementById('revRoleFilter').value;const canvasId='detailRadar-'+idx;
+  let html='<button class="back-link" onclick="renderSubmittedList()">← Volver a la lista</button>';
+  html+='<div id="pdfContent-'+idx+'">';
+  // Header for PDF
+  html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">'+r.name+'</h2><div style="font-family:Poppins,sans-serif;font-weight:700;font-size:16px;letter-spacing:1px">HACK<span style="color:#0090F8">EA</span></div></div><p style="color:#888;font-size:13px">'+r.timeLabel+'</p>';
+  html+='<div class="results-grid">'+['D','I','S','C'].map(function(k){return'<div class="score-card '+k.toLowerCase()+'"><div class="score-letter '+k.toLowerCase()+'">'+k+'</div><div class="score-value">'+scores[k]+'</div><div class="score-label">'+PROFILES[k].name+'</div><div class="score-bar-bg"><div class="score-bar-fill '+k.toLowerCase()+'" style="width:'+(scores[k]/28*100)+'%"></div></div></div>';}).join('')+'</div>';
+  html+='<div class="chart-container"><canvas id="'+canvasId+'" width="340" height="340"></canvas></div></div>';
+  html+='<div class="card"><div class="profile-box"><div class="profile-title">Perfil DISC Combinado</div><div class="profile-combo">'+combo.map(function(c2){return'<span style="color:'+PROFILES[c2].color+';font-size:36px">'+c2+'</span>';}).join('')+'</div><h3>'+ci.name+'</h3><p>'+ci.desc+'</p></div></div>';
+  html+='<div class="card"><h2>Interpretación Detallada</h2>'+['D','I','S','C'].map(function(k){const p=PROFILES[k];const level=getLevel(scores[k]);const ll=level==='alto'?'🔴 Alto':level==='medio'?'🟡 Medio':'🟢 Bajo';return'<div class="interp-section" style="border-left-color:'+p.color+'"><h3 style="color:'+p.color+'">'+k+' — '+p.name+' ('+scores[k]+' pts · '+ll+')</h3><p>'+p.desc+'</p><div style="margin-top:10px"><strong>Fortalezas:</strong><ul>'+p.strengths.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div style="margin-top:8px"><strong>Áreas de desarrollo:</strong><ul>'+p.challenges.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div style="margin-top:8px"><strong>Comunicación:</strong> '+p.communication+'</div><div style="margin-top:4px"><strong>Motivadores:</strong> '+p.motivators+'</div><div style="margin-top:4px"><strong>Estresores:</strong> '+p.stressors+'</div></div>';}).join('')+'</div>';
+  if(role&&ROLE_FIT[role]){const rf=ROLE_FIT[role];const fs=calcFitScore(scores,rf);html+='<div class="card"><h2>🎯 Ajuste al Cargo: '+rf.label+'</h2><p><strong>Competencias clave:</strong></p><div class="trait-list" style="margin:8px 0 16px">'+rf.needs.map(function(n){return'<span class="trait-tag" style="background:rgba(0,144,248,.1);color:#0090F8">'+n+'</span>';}).join('')+'</div><p><strong>Perfil ideal:</strong> '+Object.entries(rf.ideal).map(function(e){return e[0]+'='+e[1];}).join(' · ')+'</p><div style="margin-top:16px">'+['D','I','S','C'].map(function(k){const level=getLevel(scores[k]);const tipKey=level==='alto'?'high':'low';const fc=getFitClass(k,scores[k],rf.ideal[k]);return'<div class="interp-section" style="border-left-color:'+PROFILES[k].color+'"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="color:'+PROFILES[k].color+';margin:0">'+k+' — '+PROFILES[k].name+'</h3><span class="fit-indicator '+fc+'">'+(fc==='fit-high'?'✅ Buen ajuste':fc==='fit-medium'?'⚡ Parcial':'⚠️ Brecha')+'</span></div><p style="margin-top:8px">'+rf.tips[k][tipKey]+'</p></div>';}).join('')+'</div><div style="margin-top:20px;padding:16px;background:rgba(0,144,248,.04);border-radius:10px"><h3 style="color:#0090F8">📋 Recomendación General</h3><p>'+generateRec(scores,combo,rf,fs)+'</p></div></div>';}
+  html+='</div>'; // close pdfContent
+  html+='<div class="actions-row"><button class="btn btn-primary" onclick="exportPDF('+idx+')">📄 Exportar PDF</button><button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button><button class="btn btn-secondary" onclick="renderSubmittedList()">← Volver</button></div>';
+  document.getElementById('reviewerList').classList.add('hidden');const detail=document.getElementById('reviewerDetail');detail.innerHTML=html;detail.classList.remove('hidden');window.scrollTo(0,0);
+  setTimeout(function(){drawRadar(canvasId,scores);},100);
+}
+
+// ========== PDF EXPORT ==========
+function exportPDF(idx){
+  const r=submittedResults[idx];
+  const element=document.getElementById('pdfContent-'+idx);
+  const opt={
+    margin:[10,10,10,10],
+    filename:'DISC_'+r.name.replace(/\s+/g,'_')+'.pdf',
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#EBECF0'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['avoid-all','css','legacy']}
+  };
+  showToast('Generando PDF...');
+  html2pdf().set(opt).from(element).save().then(function(){showToast('PDF descargado');});
+}
+
+// ========== HELPERS ==========
+function getCombo(s){return Object.entries(s).sort(function(a,b){return b[1]-a[1];}).filter(function(e){return e[1]>0;}).map(function(e){return e[0];});}
+function getLevel(s){return s>=15?'alto':s>=8?'medio':'bajo';}
+function getFitClass(d,score,ideal){const im={alto:3,'medio-alto':2.5,medio:2,'bajo-medio':1.5,bajo:1};const am={alto:3,medio:2,bajo:1};const diff=Math.abs((im[ideal]||2)-(am[getLevel(score)]||2));return diff<=0.5?'fit-high':diff<=1?'fit-medium':'fit-low';}
+function calcFitScore(scores,rf){let t=0;['D','I','S','C'].forEach(function(k){const fc=getFitClass(k,scores[k],rf.ideal[k]);t+=fc==='fit-high'?3:fc==='fit-medium'?2:1;});return t/4;}
+function generateRec(scores,combo,rf,fs){const c=combo.join('');if(fs>=2.5)return'El perfil '+c+' presenta un buen ajuste general para '+rf.label+'. Las fortalezas naturales se alinean con las competencias requeridas. Se recomienda potenciar las áreas de desarrollo mediante coaching o mentoría.';if(fs>=1.8)return'El perfil '+c+' tiene un ajuste parcial para '+rf.label+'. Hay dimensiones alineadas, pero existen brechas a considerar. Evaluar si son manejables con capacitación o representan un riesgo para el desempeño.';return'El perfil '+c+' presenta brechas importantes respecto al perfil ideal para '+rf.label+'. No descarta al candidato/a, pero sugiere necesidad de apoyo significativo. Considerar si el rol puede adaptarse a las fortalezas naturales.';}
+
+function drawRadar(cid,scores){const canvas=document.getElementById(cid);if(!canvas)return;const ctx=canvas.getContext('2d');const w=canvas.width,h=canvas.height;const cx=w/2,cy=h/2,r=130;ctx.clearRect(0,0,w,h);const labels=['D','I','S','C'];const colors=['#E53935','#FFC107','#43A047','#1E88E5'];const angles=labels.map(function(_,i){return(Math.PI*2*i/4)-Math.PI/2;});for(let l=1;l<=4;l++){ctx.beginPath();ctx.arc(cx,cy,r*l/4,0,Math.PI*2);ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;ctx.stroke();}angles.forEach(function(a){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.stroke();});const vals=labels.map(function(k){return scores[k]/28;});ctx.beginPath();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='rgba(0,144,248,0.15)';ctx.fill();ctx.strokeStyle='#0090F8';ctx.lineWidth=2.5;ctx.stroke();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle=colors[i];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();const lx=cx+Math.cos(angles[i])*(r+25),ly=cy+Math.sin(angles[i])*(r+25);ctx.font='bold 16px Poppins,sans-serif';ctx.fillStyle=colors[i];ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labels[i],lx,ly);ctx.font='12px Arial,sans-serif';ctx.fillStyle='#888';ctx.fillText(scores[labels[i]],lx,ly+16);});}
+
+// Auto-refresh every 30 seconds when on reviewer tab
+setInterval(function(){if(document.getElementById('tab-reviewer').classList.contains('active'))loadResults();},30000);
+</script>
+</body>
+</html>
