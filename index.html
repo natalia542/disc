@@ -220,7 +220,26 @@ const SUPABASE_URL = 'https://btsdnrzmyshzfoybqpar.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0c2RucnpteXNoemZveWJxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTA3ODMsImV4cCI6MjA5MjgyNjc4M30.W449tsl57_83EPhLRTDjn13pLf5EU5q9EWF1ddnCg-s';
 // ============================================================
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let db = null;
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e) { console.error('Supabase init error:', e); }
+
+// ========== MODO POR URL ==========
+// ?modo=test    → solo ve el test (para evaluados)
+// ?modo=revisor → solo ve el panel revisor (para ti)
+// sin parámetro → ve ambos (desarrollo/pruebas)
+const MODO = new URLSearchParams(window.location.search).get('modo');
+document.addEventListener('DOMContentLoaded', function() {
+  if (MODO === 'test') {
+    document.getElementById('tabBtnReviewer').style.display = 'none';
+  } else if (MODO === 'revisor') {
+    document.getElementById('tabBtnTest').style.display = 'none';
+    document.getElementById('tab-test').classList.remove('active');
+    document.getElementById('tabBtnTest').classList.remove('active');
+    document.getElementById('tab-reviewer').classList.add('active');
+    document.getElementById('tabBtnReviewer').classList.add('active');
+    loadResults();
+  }
+});
 
 const GROUPS=[{id:1,items:[{w:"Enérgico/a",t:"D"},{w:"Sociable",t:"I"},{w:"Paciente",t:"S"},{w:"Perfeccionista",t:"C"}]},{id:2,items:[{w:"Decidido/a",t:"D"},{w:"Entusiasta",t:"I"},{w:"Confiable",t:"S"},{w:"Analítico/a",t:"C"}]},{id:3,items:[{w:"Competitivo/a",t:"D"},{w:"Alegre",t:"I"},{w:"Leal",t:"S"},{w:"Preciso/a",t:"C"}]},{id:4,items:[{w:"Directo/a",t:"D"},{w:"Comunicativo/a",t:"I"},{w:"Predecible",t:"S"},{w:"Cuidadoso/a",t:"C"}]},{id:5,items:[{w:"Atrevido/a",t:"D"},{w:"Optimista",t:"I"},{w:"Comprensivo/a",t:"S"},{w:"Disciplinado/a",t:"C"}]},{id:6,items:[{w:"Dominante",t:"D"},{w:"Persuasivo/a",t:"I"},{w:"Amable",t:"S"},{w:"Cauteloso/a",t:"C"}]},{id:7,items:[{w:"Exigente",t:"D"},{w:"Expresivo/a",t:"I"},{w:"Tranquilo/a",t:"S"},{w:"Meticuloso/a",t:"C"}]},{id:8,items:[{w:"Firme",t:"D"},{w:"Carismático/a",t:"I"},{w:"Relajado/a",t:"S"},{w:"Sistemático/a",t:"C"}]},{id:9,items:[{w:"Aventurero/a",t:"D"},{w:"Vivaz",t:"I"},{w:"Modesto/a",t:"S"},{w:"Riguroso/a",t:"C"}]},{id:10,items:[{w:"Persistente",t:"D"},{w:"Encantador/a",t:"I"},{w:"Cooperador/a",t:"S"},{w:"Detallista",t:"C"}]},{id:11,items:[{w:"Resolutivo/a",t:"D"},{w:"Motivador/a",t:"I"},{w:"Estable",t:"S"},{w:"Lógico/a",t:"C"}]},{id:12,items:[{w:"Independiente",t:"D"},{w:"Influyente",t:"I"},{w:"Considerado/a",t:"S"},{w:"Reflexivo/a",t:"C"}]},{id:13,items:[{w:"Orientado/a a resultados",t:"D"},{w:"Inspirador/a",t:"I"},{w:"Buen/a oyente",t:"S"},{w:"Organizado/a",t:"C"}]},{id:14,items:[{w:"Determinado/a",t:"D"},{w:"Conversador/a",t:"I"},{w:"Diplomático/a",t:"S"},{w:"Reservado/a",t:"C"}]},{id:15,items:[{w:"Valiente",t:"D"},{w:"Popular",t:"I"},{w:"Pacificador/a",t:"S"},{w:"Formal",t:"C"}]},{id:16,items:[{w:"Ambicioso/a",t:"D"},{w:"Espontáneo/a",t:"I"},{w:"Servicial",t:"S"},{w:"Metódico/a",t:"C"}]},{id:17,items:[{w:"Pionero/a",t:"D"},{w:"Sociable",t:"I"},{w:"Tolerante",t:"S"},{w:"Exacto/a",t:"C"}]},{id:18,items:[{w:"Asertivo/a",t:"D"},{w:"Confiado/a",t:"I"},{w:"Gentil",t:"S"},{w:"Prudente",t:"C"}]},{id:19,items:[{w:"Audaz",t:"D"},{w:"Animado/a",t:"I"},{w:"Generoso/a",t:"S"},{w:"Convencional",t:"C"}]},{id:20,items:[{w:"Emprendedor/a",t:"D"},{w:"Convincente",t:"I"},{w:"Constante",t:"S"},{w:"Perfeccionista",t:"C"}]},{id:21,items:[{w:"Franco/a",t:"D"},{w:"Efusivo/a",t:"I"},{w:"Ecuánime",t:"S"},{w:"Minucioso/a",t:"C"}]},{id:22,items:[{w:"Competidor/a",t:"D"},{w:"Jovial",t:"I"},{w:"Contenido/a",t:"S"},{w:"Normativo/a",t:"C"}]},{id:23,items:[{w:"Vigoroso/a",t:"D"},{w:"Demostrativo/a",t:"I"},{w:"Predecible",t:"S"},{w:"Escrupuloso/a",t:"C"}]},{id:24,items:[{w:"Inquieto/a",t:"D"},{w:"Versátil",t:"I"},{w:"Complaciente",t:"S"},{w:"Puntual",t:"C"}]},{id:25,items:[{w:"Comandante",t:"D"},{w:"Promotor/a",t:"I"},{w:"Mediador/a",t:"S"},{w:"Evaluador/a",t:"C"}]},{id:26,items:[{w:"Intrépido/a",t:"D"},{w:"Impulsivo/a",t:"I"},{w:"Calmado/a",t:"S"},{w:"Calculador/a",t:"C"}]},{id:27,items:[{w:"Tenaz",t:"D"},{w:"Magnético/a",t:"I"},{w:"Solidario/a",t:"S"},{w:"Crítico/a",t:"C"}]},{id:28,items:[{w:"Seguro/a de sí",t:"D"},{w:"Alegre",t:"I"},{w:"Apacible",t:"S"},{w:"Precavido/a",t:"C"}]}];
 
@@ -232,7 +251,7 @@ const ROLE_FIT={lider:{label:"Líder / Gerente / Jefatura",ideal:{D:"alto",I:"me
 
 let answers={},completedGroups=0,submittedResults=[];
 
-function switchTab(tab){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');document.getElementById('tabBtnTest').classList.toggle('active',tab==='test');document.getElementById('tabBtnReviewer').classList.toggle('active',tab==='reviewer');if(tab==='reviewer')loadResults();}
+function switchTab(tab){if(MODO==='test'&&tab==='reviewer')return;if(MODO==='revisor'&&tab==='test')return;document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');document.getElementById('tabBtnTest').classList.toggle('active',tab==='test');document.getElementById('tabBtnReviewer').classList.toggle('active',tab==='reviewer');if(tab==='reviewer')loadResults();}
 
 function startTest(){const name=document.getElementById('testName').value.trim();if(!name){alert('Por favor ingresa tu nombre para continuar.');return;}document.getElementById('introSection').classList.add('hidden');document.getElementById('questionsSection').classList.remove('hidden');renderGroups();window.scrollTo(0,0);}
 
@@ -249,7 +268,8 @@ async function submitTest(){
   const name=document.getElementById('testName').value.trim();
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span> Enviando...';
-  const {error}=await supabase.from('disc_results').insert({nombre:name,d_score:scores.D,i_score:scores.I,s_score:scores.S,c_score:scores.C});
+  if(!db){alert('Error de conexión. Recarga la página.');btn.disabled=false;btn.textContent='✅ Enviar Resultados';return;}
+  const {error}=await db.from('disc_results').insert({nombre:name,d_score:scores.D,i_score:scores.I,s_score:scores.S,c_score:scores.C});
   if(error){alert('Error al guardar: '+error.message);btn.disabled=false;btn.textContent='✅ Enviar Resultados';return;}
   document.getElementById('confirmMsg').textContent=name+', tus resultados han sido enviados al revisor.';
   document.getElementById('confirmOverlay').classList.remove('hidden');
@@ -261,7 +281,8 @@ function showToast(msg){const t=document.createElement('div');t.className='toast
 
 // ========== LOAD FROM SUPABASE ==========
 async function loadResults(){
-  const {data,error}=await supabase.from('disc_results').select('*').order('created_at',{ascending:false});
+  if(!db){showToast('Error de conexión. Recarga la página.');return;}
+  const {data,error}=await db.from('disc_results').select('*').order('created_at',{ascending:false});
   if(error){showToast('Error al cargar: '+error.message);return;}
   submittedResults=data.map(r=>({id:r.id,name:r.nombre,scores:{D:r.d_score,I:r.i_score,S:r.s_score,C:r.c_score},timestamp:r.created_at,timeLabel:formatTime(new Date(r.created_at))}));
   updateBadge();renderSubmittedList();
