@@ -304,22 +304,339 @@ function renderSubmittedList(){
 }
 
 function showDetail(idx){
-  const r=submittedResults[idx];const scores=r.scores;const combo=getCombo(scores);const primary=combo[0];const profile=PROFILES[primary];
+  const r=submittedResults[idx];const scores=r.scores;const combo=getCombo(scores);const primary=combo[0];const secondary=combo[1]||primary;
+  const profile=PROFILES[primary];
   const ck=combo.slice(0,Math.min(combo.length,3)).join('');const ci=COMBO_DESC[ck]||COMBO_DESC[combo.slice(0,2).join('')]||{name:profile.name,desc:profile.desc};
   const role=document.getElementById('revRoleFilter').value;const canvasId='detailRadar-'+idx;
   let html='<button class="back-link" onclick="renderSubmittedList()">← Volver a la lista</button>';
   html+='<div id="pdfContent-'+idx+'">';
-  // Header for PDF
-  html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">'+r.name+'</h2><div style="font-family:Poppins,sans-serif;font-weight:700;font-size:16px;letter-spacing:1px">HACK<span style="color:#0090F8">EA</span></div></div><p style="color:#888;font-size:13px">'+r.timeLabel+'</p>';
+
+  // ===== HEADER + SCORES =====
+  html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">'+r.name+'</h2><div style="font-family:Poppins,sans-serif;font-weight:700;font-size:16px;letter-spacing:1px">HACK<span style="color:#0090F8">EA</span></div></div><p style="color:#888;font-size:13px">'+r.timeLabel+(role&&ROLE_FIT[role]?' · Cargo evaluado: '+ROLE_FIT[role].label:'')+'</p>';
   html+='<div class="results-grid">'+['D','I','S','C'].map(function(k){return'<div class="score-card '+k.toLowerCase()+'"><div class="score-letter '+k.toLowerCase()+'">'+k+'</div><div class="score-value">'+scores[k]+'</div><div class="score-label">'+PROFILES[k].name+'</div><div class="score-bar-bg"><div class="score-bar-fill '+k.toLowerCase()+'" style="width:'+(scores[k]/28*100)+'%"></div></div></div>';}).join('')+'</div>';
   html+='<div class="chart-container"><canvas id="'+canvasId+'" width="340" height="340"></canvas></div></div>';
-  html+='<div class="card"><div class="profile-box"><div class="profile-title">Perfil DISC Combinado</div><div class="profile-combo">'+combo.map(function(c2){return'<span style="color:'+PROFILES[c2].color+';font-size:36px">'+c2+'</span>';}).join('')+'</div><h3>'+ci.name+'</h3><p>'+ci.desc+'</p></div></div>';
-  html+='<div class="card"><h2>Interpretación Detallada</h2>'+['D','I','S','C'].map(function(k){const p=PROFILES[k];const level=getLevel(scores[k]);const ll=level==='alto'?'🔴 Alto':level==='medio'?'🟡 Medio':'🟢 Bajo';return'<div class="interp-section" style="border-left-color:'+p.color+'"><h3 style="color:'+p.color+'">'+k+' — '+p.name+' ('+scores[k]+' pts · '+ll+')</h3><p>'+p.desc+'</p><div style="margin-top:10px"><strong>Fortalezas:</strong><ul>'+p.strengths.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div style="margin-top:8px"><strong>Áreas de desarrollo:</strong><ul>'+p.challenges.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div style="margin-top:8px"><strong>Comunicación:</strong> '+p.communication+'</div><div style="margin-top:4px"><strong>Motivadores:</strong> '+p.motivators+'</div><div style="margin-top:4px"><strong>Estresores:</strong> '+p.stressors+'</div></div>';}).join('')+'</div>';
-  if(role&&ROLE_FIT[role]){const rf=ROLE_FIT[role];const fs=calcFitScore(scores,rf);html+='<div class="card"><h2>🎯 Ajuste al Cargo: '+rf.label+'</h2><p><strong>Competencias clave:</strong></p><div class="trait-list" style="margin:8px 0 16px">'+rf.needs.map(function(n){return'<span class="trait-tag" style="background:rgba(0,144,248,.1);color:#0090F8">'+n+'</span>';}).join('')+'</div><p><strong>Perfil ideal:</strong> '+Object.entries(rf.ideal).map(function(e){return e[0]+'='+e[1];}).join(' · ')+'</p><div style="margin-top:16px">'+['D','I','S','C'].map(function(k){const level=getLevel(scores[k]);const tipKey=level==='alto'?'high':'low';const fc=getFitClass(k,scores[k],rf.ideal[k]);return'<div class="interp-section" style="border-left-color:'+PROFILES[k].color+'"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="color:'+PROFILES[k].color+';margin:0">'+k+' — '+PROFILES[k].name+'</h3><span class="fit-indicator '+fc+'">'+(fc==='fit-high'?'✅ Buen ajuste':fc==='fit-medium'?'⚡ Parcial':'⚠️ Brecha')+'</span></div><p style="margin-top:8px">'+rf.tips[k][tipKey]+'</p></div>';}).join('')+'</div><div style="margin-top:20px;padding:16px;background:rgba(0,144,248,.04);border-radius:10px"><h3 style="color:#0090F8">📋 Recomendación General</h3><p>'+generateRec(scores,combo,rf,fs)+'</p></div></div>';}
+
+  // ===== 1. RESUMEN EJECUTIVO =====
+  html+='<div class="card"><h2>📋 Resumen Ejecutivo</h2>';
+  html+='<div class="profile-box"><div class="profile-combo" style="margin-bottom:8px">'+combo.map(function(c2){return'<span style="color:'+PROFILES[c2].color+';font-size:36px">'+c2+'</span>';}).join('')+'</div>';
+  html+='<h3 style="margin-bottom:12px">'+ci.name+'</h3>';
+  html+='<p>'+genExecutiveSummary(scores,combo,ci)+'</p></div></div>';
+
+  // ===== 2. PERFIL INTEGRAL =====
+  html+='<div class="card"><h2>🧩 Perfil Integral — Cómo Interactúan las Dimensiones</h2>';
+  html+=genIntegratedProfile(scores,combo);
+  html+='</div>';
+
+  // ===== 3. ESCENARIOS CONDUCTUALES =====
+  html+='<div class="card"><h2>🎭 Predicciones Conductuales</h2>';
+  html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Cómo es probable que se comporte esta persona en situaciones laborales concretas.</p>';
+  html+=genBehavioralScenarios(scores,combo);
+  html+='</div>';
+
+  // ===== 4. ALERTAS POR CARGO =====
+  if(role&&ROLE_FIT[role]){
+    const rf=ROLE_FIT[role];const fs=calcFitScore(scores,rf);
+    html+='<div class="card"><h2>⚠️ Alertas para el Cargo: '+rf.label+'</h2>';
+    html+=genAlerts(scores,combo,role,rf);
+    // Overall fit
+    html+='<div style="margin-top:20px;padding:20px;background:'+(fs>=2.5?'rgba(67,160,71,.06);border:1px solid rgba(67,160,71,.2)':fs>=1.8?'rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2)':'rgba(229,57,53,.06);border:1px solid rgba(229,57,53,.2)')+';border-radius:12px"><h3 style="color:'+(fs>=2.5?'#2E7D32':fs>=1.8?'#F57F17':'#C62828')+'">Ajuste General: '+(fs>=2.5?'✅ Bueno':fs>=1.8?'⚡ Parcial — requiere atención':'⚠️ Brechas significativas')+'</h3>';
+    html+='<p style="margin-top:8px">'+generateRec(scores,combo,rf,fs)+'</p></div>';
+    html+='</div>';
+
+    // ===== 5. PREGUNTAS DE ENTREVISTA =====
+    html+='<div class="card"><h2>❓ Preguntas de Entrevista Sugeridas</h2>';
+    html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Preguntas diseñadas para explorar las brechas y riesgos identificados para este cargo.</p>';
+    html+=genInterviewQuestions(scores,combo,role,rf);
+    html+='</div>';
+  }
+
+  // ===== 6. DIMENSIONES DETALLADAS (colapsable) =====
+  html+='<div class="card"><h2>📊 Detalle por Dimensión</h2>';
+  html+=(['D','I','S','C'].map(function(k){
+    const p=PROFILES[k];const level=getLevel(scores[k]);
+    const ll=level==='alto'?'🔴 Alto':level==='medio'?'🟡 Medio':'🟢 Bajo';
+    return'<div class="interp-section" style="border-left-color:'+p.color+'"><h3 style="color:'+p.color+'">'+k+' — '+p.name+' ('+scores[k]+' pts · '+ll+')</h3><p>'+p.desc+'</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px"><div><strong style="color:#2E7D32">✅ Fortalezas:</strong><ul style="margin-top:4px">'+p.strengths.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div><strong style="color:#E6A800">⚠️ Áreas de desarrollo:</strong><ul style="margin-top:4px">'+p.challenges.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div></div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px"><div><strong>💬 Comunicación:</strong><br>'+p.communication+'</div><div><strong>🔥 Motivadores:</strong><br>'+p.motivators+'</div><div><strong>😰 Estresores:</strong><br>'+p.stressors+'</div></div></div>';
+  }).join(''))+'</div>';
+
+  // ===== 7. GUÍA DE GESTIÓN =====
+  html+='<div class="card"><h2>🤝 Guía de Gestión</h2>';
+  html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Recomendaciones concretas para liderar, motivar y comunicarse con esta persona.</p>';
+  html+=genManagementGuide(scores,combo);
+  html+='</div>';
+
+  // ===== 8. COMPATIBILIDAD DE EQUIPO =====
+  html+='<div class="card"><h2>👥 Compatibilidad de Equipo</h2>';
+  html+=genTeamCompatibility(scores,combo);
+  html+='</div>';
+
   html+='</div>'; // close pdfContent
   html+='<div class="actions-row"><button class="btn btn-primary" onclick="exportPDF('+idx+')">📄 Exportar PDF</button><button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button><button class="btn btn-secondary" onclick="renderSubmittedList()">← Volver</button></div>';
   document.getElementById('reviewerList').classList.add('hidden');const detail=document.getElementById('reviewerDetail');detail.innerHTML=html;detail.classList.remove('hidden');window.scrollTo(0,0);
   setTimeout(function(){drawRadar(canvasId,scores);},100);
+}
+
+// ===== ENHANCED REPORT GENERATORS =====
+
+function genExecutiveSummary(scores,combo,ci){
+  const p=combo[0],s=combo[1]||combo[0];
+  const dLvl=getLevel(scores.D),iLvl=getLevel(scores.I),sLvl=getLevel(scores.S),cLvl=getLevel(scores.C);
+  let txt=ci.desc+' ';
+
+  // Decision style
+  if(dLvl==='alto') txt+='Toma decisiones de forma rápida y firme, priorizando resultados por sobre consenso. ';
+  else if(dLvl==='bajo') txt+='Prefiere consultar y consensuar antes de tomar decisiones, lo que puede ralentizar procesos pero reduce riesgos. ';
+  else txt+='Tiene un estilo decisional balanceado, capaz de actuar con firmeza cuando es necesario sin atropellar. ';
+
+  // Social style
+  if(iLvl==='alto') txt+='Se desenvuelve con naturalidad en entornos sociales y genera conexiones rápidamente, aunque puede prometer más de lo que cumple. ';
+  else if(iLvl==='bajo') txt+='Es reservado/a y selectivo/a en sus relaciones; no busca protagonismo pero puede ser percibido/a como distante. ';
+  else txt+='Mantiene relaciones profesionales adecuadas sin necesidad de ser el centro de atención. ';
+
+  // Stability
+  if(sLvl==='alto'&&dLvl==='alto') txt+='La combinación de alta Dominancia con alta Estabilidad sugiere una persona que empuja fuerte pero valora la lealtad del equipo — puede frustrarse cuando el cambio que impulsa genera resistencia en otros. ';
+  else if(sLvl==='alto') txt+='Valora profundamente la estabilidad y la previsibilidad; los cambios bruscos son su principal fuente de estrés. ';
+  else if(sLvl==='bajo') txt+='Se adapta con facilidad a los cambios, pero puede generar inestabilidad en equipos que necesitan consistencia. ';
+
+  // Quality
+  if(cLvl==='alto'&&iLvl==='alto') txt+='La tensión entre su necesidad de precisión (C) y su impulso social (I) puede manifestarse como frustración interna: quiere hacer las cosas perfectas pero también rápido y con buena onda. ';
+  else if(cLvl==='alto') txt+='Su alto estándar de calidad es un activo, pero puede convertirse en cuello de botella si no aprende a soltar el perfeccionismo. ';
+  else if(cLvl==='bajo') txt+='No se detiene mucho en los detalles, lo que le da agilidad pero puede resultar en errores o entregas incompletas. ';
+
+  return txt;
+}
+
+function genIntegratedProfile(scores,combo){
+  let html='';
+  const d=scores.D,i=scores.I,s=scores.S,c=scores.C;
+
+  // Tension analysis
+  html+='<div class="interp-section" style="border-left-color:#0090F8"><h3 style="color:#0090F8">Tensiones Internas</h3>';
+  let tensions=[];
+  if(d>=15&&s>=15) tensions.push({t:'D alto + S alto',desc:'Quiere resultados rápidos PERO también necesita armonía. Puede frustrarse internamente cuando debe presionar al equipo. En la práctica, empuja fuerte y después se siente culpable. <strong>Ejemplo:</strong> Fija plazos agresivos, pero cuando alguien se atrasa, le cuesta confrontar directamente.'});
+  if(d>=15&&c>=15) tensions.push({t:'D alto + C alto',desc:'Quiere decidir rápido PERO también necesita que todo esté perfecto. Puede oscilar entre la impulsividad y la parálisis. <strong>Ejemplo:</strong> Lanza un proyecto con entusiasmo pero lo frena a último minuto porque encontró un error menor.'});
+  if(i>=15&&c>=15) tensions.push({t:'I alto + C alto',desc:'Quiere innovar y conectar PERO también necesita que los datos respalden todo. Puede ser creativo/a en la ideación pero lento/a en la ejecución. <strong>Ejemplo:</strong> Propone ideas brillantes en reuniones pero después pasa días afinando detalles antes de avanzar.'});
+  if(i>=15&&s>=8&&d<8) tensions.push({t:'I alto + D bajo',desc:'Gran capacidad de influencia PERO poca inclinación a tomar el control. Puede generar entusiasmo sin dirección clara. <strong>Ejemplo:</strong> Motiva al equipo con una visión inspiradora pero no define quién hace qué ni para cuándo.'});
+  if(s>=15&&d<8) tensions.push({t:'S alto + D bajo',desc:'Muy confiable y estable PERO le cuesta tomar la iniciativa o decir que no. <strong>Ejemplo:</strong> Acepta todas las tareas que le piden hasta quedar sobrecargado/a, sin pedir ayuda ni renegociar plazos.'});
+  if(c>=15&&i<8) tensions.push({t:'C alto + I bajo',desc:'Trabaja con alta precisión PERO no comunica bien sus avances ni sus necesidades. <strong>Ejemplo:</strong> Entrega un trabajo impecable pero nadie sabía que estaba listo porque no avisó, o detecta un problema grave pero no lo escala a tiempo.'});
+  if(tensions.length===0) tensions.push({t:'Perfil balanceado',desc:'No se detectan tensiones internas significativas. El perfil muestra coherencia entre las dimensiones, lo que facilita la predictibilidad de su comportamiento. Sin embargo, perfiles muy balanceados a veces carecen de una fortaleza diferenciadora marcada.'});
+  tensions.forEach(function(t){html+='<div style="margin-bottom:12px;padding:12px 16px;background:rgba(0,144,248,.03);border-radius:8px"><strong>'+t.t+':</strong> '+t.desc+'</div>';});
+  html+='</div>';
+
+  // Work style synthesis
+  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047">Estilo de Trabajo</h3>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+  html+='<div><strong>Ritmo:</strong> '+(d>=15||i>=15?'Rápido, orientado a la acción. Prefiere avanzar aunque no esté todo claro.':'Metódico y reflexivo. Necesita procesar antes de actuar.')+'</div>';
+  html+='<div><strong>Enfoque:</strong> '+(d>=15||c>=15?'Orientado a resultados y/o calidad. Mide su éxito por lo que entrega.':'Orientado a relaciones y/o procesos. Mide su éxito por cómo se sienten los demás o por la consistencia.')+'</div>';
+  html+='<div><strong>Ante ambigüedad:</strong> '+(d>=15?'La resuelve tomando el control.':i>=15?'La explora con creatividad y conversación.':s>=15?'La evita, busca certezas antes de actuar.':'La analiza exhaustivamente antes de moverse.')+'</div>';
+  html+='<div><strong>Ante conflictos:</strong> '+(d>=15?'Los enfrenta directamente, puede escalar rápido.':i>=15?'Intenta resolverlos con diálogo y humor, puede minimizarlos.':s>=15?'Los evita o los absorbe internamente.':'Los analiza fríamente, puede ser percibido/a como insensible.')+'</div>';
+  html+='</div></div>';
+
+  // Energy pattern
+  html+='<div class="interp-section" style="border-left-color:#FFC107"><h3 style="color:#E6A800">Patrón de Energía</h3>';
+  html+='<p><strong>Se energiza con:</strong> '+(d>=15?'Desafíos, competencia, autonomía. ':'')+( i>=15?'Interacción social, reconocimiento, variedad. ':'')+(s>=15?'Rutinas predecibles, relaciones estables, tranquilidad. ':'')+(c>=15?'Problemas complejos, datos, orden. ':'')+'</p>';
+  html+='<p><strong>Se agota con:</strong> '+(d>=15?'Burocracia, falta de control, lentitud. ':'')+(i>=15?'Aislamiento, tareas repetitivas, ambientes fríos. ':'')+(s>=15?'Cambios bruscos, confrontaciones, incertidumbre. ':'')+(c>=15?'Improvisación, errores ajenos, presión sin datos. ':'')+'</p>';
+  html+='</div>';
+
+  return html;
+}
+
+function genBehavioralScenarios(scores,combo){
+  const d=scores.D,i=scores.I,s=scores.S,c=scores.C;
+  let html='';
+  const scenarios=[
+    {icon:'🔥',title:'Bajo presión de plazos',
+      behavior:d>=15?'Toma el control, acelera al equipo y recorta procesos para cumplir. Riesgo: puede sacrificar calidad o atropellar a personas.':
+      i>=15?'Mantiene el optimismo y busca ayuda, pero puede subestimar la gravedad. Riesgo: promete que "va a estar" sin plan concreto.':
+      s>=15?'Se estresa internamente pero sigue trabajando con consistencia. Riesgo: no pide ayuda ni comunica que está al límite hasta que colapsa.':
+      'Revisa todo al detalle buscando errores. Riesgo: puede frenar la entrega por perfeccionismo justo cuando hay que soltar.'},
+    {icon:'💥',title:'En un conflicto con un par',
+      behavior:d>=15?'Lo enfrenta directamente, expone su posición con firmeza. Si el otro no cede, puede escalar. Riesgo: genera resentimiento sin darse cuenta.':
+      i>=15?'Busca un espacio de conversación, usa humor o empatía para bajar la tensión. Riesgo: puede ceder demasiado para mantener la relación.':
+      s>=15?'Evita la confrontación, busca puntos en común o simplemente se adapta. Riesgo: acumula frustración que después explota o se convierte en desapego.':
+      'Presenta argumentos lógicos y espera que prevalezca la razón. Riesgo: puede parecer frío/a o inflexible cuando el conflicto es emocional.'},
+    {icon:'📢',title:'Recibiendo feedback negativo',
+      behavior:d>=15?'Lo toma como un desafío. Si considera que es injusto, discute. Si lo acepta, actúa inmediatamente para corregir. Riesgo: puede ponerse a la defensiva si siente que cuestionan su competencia.':
+      i>=15?'Lo recibe con apertura aparente pero puede sentirse herido/a internamente. Busca validación posterior. Riesgo: puede cambiar su actitud hacia quien dio el feedback.':
+      s>=15?'Lo escucha con calma y no reacciona visiblemente. Lo procesa lentamente. Riesgo: puede tomárselo demasiado personal y rumiar por días.':
+      'Lo analiza objetivamente, pide ejemplos concretos. Si tiene datos que lo contradicen, los presenta. Riesgo: puede parecer que no le importa o que está argumentando en vez de escuchando.'},
+    {icon:'🆕',title:'Ante un cambio organizacional grande',
+      behavior:d>=15?'Se adapta rápido si ve oportunidad. Toma posición temprana. Riesgo: puede generar resistencia en otros al moverse demasiado rápido.':
+      i>=15?'Lo recibe con entusiasmo inicial y contagia al equipo. Riesgo: cuando la novedad pasa, puede perder interés antes de que el cambio se consolide.':
+      s>=15?'Necesita tiempo para procesarlo. Busca entender el "por qué" antes de moverse. Riesgo: puede ser percibido/a como resistente o lento/a, cuando en realidad está asimilando.':
+      'Evalúa el impacto, busca documentación y plantea preguntas. Riesgo: puede retrasar la adopción mientras analiza todos los escenarios posibles.'},
+    {icon:'👔',title:'Liderando un equipo',
+      behavior:d>=15?'Define objetivos claros, delega y hace seguimiento firme. Estilo directo. Riesgo: puede microgestionar o no dar espacio para que otros aporten.':
+      i>=15?'Motiva, inspira y genera buen ambiente. Estilo participativo. Riesgo: puede evitar decisiones impopulares y dejar pasar bajo rendimiento.':
+      s>=15?'Crea un ambiente seguro, escucha y apoya. Estilo servicial. Riesgo: puede tener dificultad para dar feedback duro o desvinculaciones.':
+      'Organiza, planifica y establece estándares claros. Estilo metódico. Riesgo: puede ser percibido/a como frío/a o excesivamente controlador/a.'}
+  ];
+  scenarios.forEach(function(sc){
+    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><h3 style="color:#0090F8;font-size:15px">'+sc.icon+' '+sc.title+'</h3><p style="margin:0;font-size:14px">'+sc.behavior+'</p></div>';
+  });
+  return html;
+}
+
+function genAlerts(scores,combo,role,rf){
+  let html='';
+  const d=scores.D,i=scores.I,s=scores.S,c=scores.C;
+  let critical=[],moderate=[];
+
+  // Generate role-specific alerts
+  if(role==='lider'){
+    if(d<8) critical.push('D muy bajo para liderazgo: Evitará tomar decisiones impopulares. <strong>Ejemplo real:</strong> Cuando haya que desvincularse de un mal desempeño, probablemente postergará la conversación indefinidamente o delegará la responsabilidad.');
+    if(s>=18&&d<10) critical.push('Perfil muy pasivo para gestión: La combinación de alta Estabilidad con baja Dominancia puede traducirse en un líder que prioriza mantener la paz por sobre obtener resultados. <strong>Ejemplo real:</strong> El equipo lo/la aprecia pero los KPIs no se cumplen porque no hay presión.');
+    if(i<8) moderate.push('I bajo para liderazgo: Le costará comunicar la visión y generar compromiso emocional en el equipo. <strong>Recomendación:</strong> Acompañar con un comunicador fuerte o capacitar en storytelling.');
+    if(c>=20) moderate.push('C muy alto: Podría paralizar al equipo con exceso de controles y reportes. <strong>Ejemplo real:</strong> Pide 3 revisiones para un email antes de enviarlo. Los reportes directos se frustran por falta de autonomía.');
+  }
+  if(role==='comercial'){
+    if(i<8) critical.push('I muy bajo para ventas: No genera rapport natural con clientes. La conversación se sentirá transaccional y fría. <strong>Ejemplo real:</strong> El cliente prefiere comprarle a la competencia aunque el producto sea peor, porque "el otro vendedor me cae mejor".');
+    if(d<8&&i<8) critical.push('D e I ambos bajos: Perfil muy pasivo para cerrar ventas. No va a presionar el cierre ni generar urgencia. <strong>Ejemplo real:</strong> Envía la propuesta y espera que el cliente responda solo. No hace follow-up proactivo.');
+    if(c>=18) moderate.push('C muy alto para ventas: Sobre-prepara las presentaciones y pierde timing comercial. <strong>Ejemplo real:</strong> Mientras perfecciona la propuesta, la competencia ya cerró el deal.');
+    if(s>=18) moderate.push('S muy alto: Excelente en post-venta y fidelización, pero probablemente evitará la prospección en frío y las negociaciones duras.');
+  }
+  if(role==='admin'){
+    if(d>=18) critical.push('D muy alto para rol administrativo: Se frustrará con la rutina y la falta de autonomía. <strong>Ejemplo real:</strong> A los 3 meses empieza a cuestionar procesos y a saltarse pasos "innecesarios". Alta probabilidad de rotación.');
+    if(c<8) moderate.push('C bajo para rol administrativo: Cometerá errores por falta de atención al detalle. <strong>Recomendación:</strong> Implementar doble revisión en sus entregas y listas de verificación.');
+    if(s<8) moderate.push('S bajo: Buscará cambios y variedad en un rol que requiere consistencia. Riesgo de desmotivación temprana.');
+  }
+  if(role==='tecnico'){
+    if(c<8) critical.push('C muy bajo para rol técnico: No tiene la rigurosidad natural que el cargo requiere. <strong>Ejemplo real:</strong> Entrega código/documentos sin probar o revisar, genera retrabajo constante.');
+    if(d>=18&&c<10) critical.push('D alto + C bajo: Querrá resolver todo rápido sin profundizar. <strong>Ejemplo real:</strong> Implementa la primera solución que se le ocurre sin evaluar alternativas ni impactos secundarios.');
+    if(i>=18) moderate.push('I muy alto para rol técnico: Preferirá socializar a profundizar. <strong>Recomendación:</strong> Asignarle tareas con interacción (soporte, documentación para usuarios) además de trabajo técnico puro.');
+  }
+  if(role==='operativo'){
+    if(d>=18&&c<10) critical.push('D alto + C bajo: Podría saltarse protocolos de seguridad para ir más rápido. <strong>Ejemplo real:</strong> Omite usar EPP porque "le quita tiempo", toma atajos en procedimientos.');
+    if(s<8) moderate.push('S bajo para rol operativo: Se aburre con la rutina, busca cambios y puede descuidar tareas repetitivas pero críticas.');
+  }
+  if(role==='rrhh'){
+    if(s<8&&i<8) critical.push('S e I ambos bajos: Le costará generar confianza y empatía con colaboradores en procesos sensibles como desvinculaciones, mediaciones o atención a denuncias.');
+    if(d>=18) moderate.push('D muy alto para RRHH: Puede ser percibido/a como autoritario/a en un rol que requiere escucha y contención. <strong>Recomendación:</strong> Capacitar en escucha activa y contención emocional.');
+    if(c<8) moderate.push('C bajo: Podría descuidar aspectos normativos y legales del área. Riesgo de incumplimientos laborales.');
+  }
+  if(role==='proyecto'){
+    if(c<8) critical.push('C bajo para gestión de proyectos: No tendrá la rigurosidad para controlar plazos, presupuesto y alcance. <strong>Ejemplo real:</strong> El proyecto se desvía 40% en plazo porque no llevaba seguimiento formal.');
+    if(d<8) moderate.push('D bajo: Le costará presionar a equipos multidisciplinarios para cumplir entregables, especialmente cuando no tiene autoridad jerárquica directa.');
+    if(i<8) moderate.push('I bajo: Dificultad para gestionar stakeholders y generar alineamiento político. Los sponsors podrían desengancharse del proyecto.');
+  }
+  if(role==='analista'){
+    if(c<10) critical.push('C bajo para rol analítico: La base del cargo es precisión y rigor, y este perfil no tiene esa inclinación natural. Alto riesgo de errores en datos y conclusiones.');
+    if(d>=18) moderate.push('D muy alto: Querrá concluir rápido sin profundizar en el análisis. <strong>Ejemplo real:</strong> Presenta conclusiones basadas en datos parciales porque "ya tiene suficiente para decidir".');
+  }
+  if(role==='atencion'){
+    if(d>=18&&s<8) critical.push('D alto + S bajo: Perfil impaciente que no tolera clientes difíciles. <strong>Ejemplo real:</strong> Corta la conversación con un cliente frustrado porque "ya le explicó" o escala innecesariamente.');
+    if(i<8) moderate.push('I bajo: El trato será funcional pero sin calidez. El cliente resuelve su problema pero no se siente bien atendido.');
+  }
+  if(role==='creativo'){
+    if(i<8&&d<8) critical.push('I y D bajos: Falta el motor creativo (I) y el impulso para proponer (D). <strong>Ejemplo real:</strong> Ejecuta lo que le piden con calidad, pero nunca propone ideas nuevas ni desafía el brief.');
+    if(c>=20) moderate.push('C muy alto: El perfeccionismo puede matar la creatividad. <strong>Ejemplo real:</strong> Revisa un diseño 15 veces antes de mostrarlo, se pierde los deadlines creativos.');
+  }
+
+  // Generic alerts based on extreme scores
+  if(d>=22) moderate.push('D extremadamente alto ('+d+'): Riesgo de comportamiento autoritario y dificultad para trabajar en equipo. Requiere un/a líder que sepa poner límites con firmeza.');
+  if(i>=22) moderate.push('I extremadamente alto ('+i+'): Puede comprometerse con demasiadas cosas a la vez y no cumplir. Necesita estructura externa y accountability.');
+  if(s>=22) moderate.push('S extremadamente alto ('+s+'): Resistencia al cambio significativa. Cualquier reestructuración o cambio de procesos requerirá acompañamiento personalizado.');
+  if(c>=22) moderate.push('C extremadamente alto ('+c+'): Perfeccionismo que puede afectar productividad y relaciones. Puede generar cuellos de botella.');
+
+  if(critical.length>0){
+    html+='<div style="margin-bottom:16px"><h3 style="color:#C62828;margin-bottom:10px">🔴 Alertas Críticas</h3>';
+    critical.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(229,57,53,.06);border:1px solid rgba(229,57,53,.15);border-radius:10px;margin-bottom:8px;font-size:14px;line-height:1.6">'+a+'</div>';});
+    html+='</div>';
+  }
+  if(moderate.length>0){
+    html+='<div style="margin-bottom:16px"><h3 style="color:#F57F17;margin-bottom:10px">🟡 Alertas Moderadas</h3>';
+    moderate.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(255,193,7,.06);border:1px solid rgba(255,193,7,.2);border-radius:10px;margin-bottom:8px;font-size:14px;line-height:1.6">'+a+'</div>';});
+    html+='</div>';
+  }
+  if(critical.length===0&&moderate.length===0){
+    html+='<div style="padding:16px;background:rgba(67,160,71,.06);border:1px solid rgba(67,160,71,.2);border-radius:10px"><p style="margin:0;color:#2E7D32;font-weight:600">✅ No se detectan alertas significativas para este cargo. El perfil se alinea adecuadamente con los requerimientos.</p></div>';
+  }
+  return html;
+}
+
+function genInterviewQuestions(scores,combo,role,rf){
+  let html='';const d=scores.D,i=scores.I,s=scores.S,c=scores.C;
+  let questions=[];
+
+  // Role-specific probing questions
+  if(d>=15) questions.push({area:'Dominancia alta — Trabajo en equipo',q:'Cuéntame de una vez en que un colega no estaba de acuerdo contigo en un proyecto importante. ¿Qué hiciste?',why:'Buscar si impone su visión o si puede ceder. Atención a respuestas tipo "les demostré que yo tenía razón".'});
+  if(d<8&&(role==='lider'||role==='proyecto'||role==='comercial')) questions.push({area:'Dominancia baja — Toma de decisiones',q:'Describe una situación donde tuviste que tomar una decisión difícil que afectaba a otras personas. ¿Cómo lo manejaste?',why:'Evaluar si tiene capacidad de decidir bajo presión o si evita/delega las decisiones duras.'});
+  if(i>=15) questions.push({area:'Influencia alta — Seguimiento',q:'Dame un ejemplo de un proyecto donde empezaste con mucho entusiasmo. ¿Cómo terminó? ¿Qué pasó en el camino?',why:'Buscar si mantiene el compromiso a largo plazo o si pierde interés cuando pasa la novedad.'});
+  if(i<8&&(role==='comercial'||role==='atencion'||role==='rrhh')) questions.push({area:'Influencia baja — Comunicación',q:'¿Cómo manejas una situación donde necesitas convencer a alguien de tu idea y esa persona es escéptica?',why:'Evaluar capacidad de persuasión e influencia. Atención a respuestas puramente racionales sin componente emocional.'});
+  if(s>=15) questions.push({area:'Estabilidad alta — Adaptabilidad',q:'Cuéntame de un cambio importante en tu trabajo anterior (nuevo jefe, reestructuración, nuevo sistema). ¿Cómo lo viviste?',why:'Evaluar flexibilidad real. Atención a respuestas como "fue difícil pero me adapté" sin detalles concretos.'});
+  if(s<8&&(role==='admin'||role==='operativo')) questions.push({area:'Estabilidad baja — Consistencia',q:'¿Cómo manejas tareas que son repetitivas pero necesarias? Dame un ejemplo concreto.',why:'Evaluar si puede sostener la rutina o si busca escapar. Atención a señales de aburrimiento o desvalorización de lo rutinario.'});
+  if(c>=15) questions.push({area:'Cumplimiento alto — Pragmatismo',q:'¿Alguna vez tuviste que entregar algo que no estaba perfecto porque se acababa el tiempo? ¿Cómo te sentiste?',why:'Evaluar capacidad de "soltar" cuando es necesario. Atención a respuestas de malestar intenso o justificaciones.'});
+  if(c<8&&(role==='tecnico'||role==='analista'||role==='admin')) questions.push({area:'Cumplimiento bajo — Rigurosidad',q:'Describe tu proceso cuando tienes que entregar un informe o documento importante. ¿Cuántas veces lo revisas?',why:'Evaluar nivel de revisión natural. Atención a respuestas tipo "lo reviso una vez y listo" en cargos que requieren precisión.'});
+
+  // Always include
+  questions.push({area:'Autoconocimiento',q:'Si le preguntara a tu jefe/a anterior cuál es tu mayor debilidad profesional, ¿qué me diría?',why:'Evaluar nivel de autoconocimiento y honestidad. Comparar con el perfil DISC para ver si hay coherencia.'});
+
+  questions.forEach(function(q){
+    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600;margin-bottom:4px">'+q.area+'</div><p style="font-weight:600;font-size:15px;color:#2A2A2A;margin-bottom:6px">"'+q.q+'"</p><p style="font-size:13px;color:#888;margin:0"><strong>Qué escuchar:</strong> '+q.why+'</p></div>';
+  });
+  return html;
+}
+
+function genManagementGuide(scores,combo){
+  let html='';const d=scores.D,i=scores.I,s=scores.S,c=scores.C;const p=combo[0];
+
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+
+  // How to give feedback
+  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:15px">💬 Cómo darle feedback</h3><ul>';
+  if(d>=15) html+='<li>Sé directo/a y breve. No des muchas vueltas.</li><li>Enfoca en resultados, no en emociones.</li><li>Déjale proponer la solución.</li>';
+  else if(i>=15) html+='<li>Empieza reconociendo lo positivo.</li><li>Da el feedback en privado, nunca frente a otros.</li><li>Conecta la mejora con su visibilidad o impacto.</li>';
+  else if(s>=15) html+='<li>Sé empático/a y da contexto del por qué.</li><li>No lo/la sorprendas; anticipa el tema.</li><li>Dale tiempo para procesar antes de pedir una respuesta.</li>';
+  else html+='<li>Usa datos y ejemplos concretos.</li><li>Sé específico/a y objetivo/a.</li><li>Evita generalizaciones como "siempre" o "nunca".</li>';
+  html+='</ul></div>';
+
+  // How to motivate
+  html+='<div class="interp-section" style="border-left-color:#FFC107"><h3 style="color:#E6A800;font-size:15px">🔥 Cómo motivarle</h3><ul>';
+  if(d>=15) html+='<li>Darle desafíos y autonomía.</li><li>Reconocer logros con impacto visible.</li><li>Ofrecerle oportunidades de crecimiento.</li>';
+  else if(i>=15) html+='<li>Reconocimiento público y frecuente.</li><li>Involucrarlo/a en proyectos sociales o creativos.</li><li>Darle variedad y contacto con personas.</li>';
+  else if(s>=15) html+='<li>Estabilidad y previsibilidad.</li><li>Reconocimiento sincero y personal (no público).</li><li>Relación de confianza con su líder.</li>';
+  else html+='<li>Oportunidades de especialización.</li><li>Autonomía para definir el "cómo".</li><li>Acceso a información y capacitación.</li>';
+  html+='</ul></div>';
+
+  // What to avoid
+  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:15px">🚫 Qué evitar</h3><ul>';
+  if(d>=15) html+='<li>Microgestionar o controlar cada paso.</li><li>Ignorar sus ideas o no dejarlo/a participar en decisiones.</li><li>Burocracia innecesaria.</li>';
+  else if(i>=15) html+='<li>Aislarlo/a en tareas solitarias por mucho tiempo.</li><li>Ignorar sus aportes o no darle crédito.</li><li>Ambiente rígido sin espacio para socializar.</li>';
+  else if(s>=15) html+='<li>Cambios sorpresivos sin explicación.</li><li>Presión agresiva o confrontación pública.</li><li>Pedirle decisiones rápidas sin información.</li>';
+  else html+='<li>Ambigüedad en las expectativas.</li><li>Presión para improvisar sin preparación.</li><li>Criticar su trabajo sin fundamento.</li>';
+  html+='</ul></div>';
+
+  // Communication
+  html+='<div class="interp-section" style="border-left-color:#1E88E5"><h3 style="color:#1E88E5;font-size:15px">📧 Cómo comunicarse</h3><ul>';
+  if(d>=15) html+='<li>Emails cortos, con el punto al inicio.</li><li>Reuniones breves con agenda clara.</li><li>Ir al grano, sin small talk excesivo.</li>';
+  else if(i>=15) html+='<li>Conversación antes que email para temas importantes.</li><li>Dejar espacio para que se exprese.</li><li>Tono cercano y entusiasta.</li>';
+  else if(s>=15) html+='<li>Dar contexto completo, no solo instrucciones.</li><li>Preguntar cómo se siente con los cambios.</li><li>Seguimiento gentil pero constante.</li>';
+  else html+='<li>Información detallada por escrito.</li><li>Datos y evidencia para respaldar pedidos.</li><li>Dar tiempo para analizar antes de responder.</li>';
+  html+='</ul></div>';
+
+  html+='</div>';
+  return html;
+}
+
+function genTeamCompatibility(scores,combo){
+  let html='';const p=combo[0],s2=combo[1]||p;
+
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:15px">✅ Se complementa bien con</h3><ul>';
+  if(p==='D') html+='<li><strong>Perfiles S:</strong> Aportan la paciencia y estabilidad que D necesita. Equilibran su impulsividad.</li><li><strong>Perfiles C:</strong> Le dan la rigurosidad en los detalles que D tiende a ignorar.</li>';
+  else if(p==='I') html+='<li><strong>Perfiles C:</strong> Le dan estructura y seguimiento a las ideas de I.</li><li><strong>Perfiles S:</strong> Ejecutan de manera confiable lo que I propone.</li>';
+  else if(p==='S') html+='<li><strong>Perfiles D:</strong> Le dan dirección y decisión cuando S duda.</li><li><strong>Perfiles I:</strong> Le aportan energía y entusiasmo para salir de la zona de confort.</li>';
+  else html+='<li><strong>Perfiles I:</strong> Le aportan la comunicación y flexibilidad que C necesita.</li><li><strong>Perfiles D:</strong> Empujan a la acción cuando C se pierde en el análisis.</li>';
+  html+='</ul></div>';
+
+  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:15px">⚡ Fricción potencial con</h3><ul>';
+  if(p==='D') html+='<li><strong>Otros D:</strong> Lucha de poder. Dos D en el mismo equipo compiten por el control.</li><li><strong>Perfiles S muy altos:</strong> D los percibe como lentos; S percibe a D como agresivo/a.</li>';
+  else if(p==='I') html+='<li><strong>Perfiles C altos:</strong> C percibe a I como superficial; I percibe a C como aguafiestas.</li><li><strong>Otros I:</strong> Mucha energía pero poca ejecución. Todos hablan, nadie hace.</li>';
+  else if(p==='S') html+='<li><strong>Perfiles D altos:</strong> D presiona y S se repliega. El conflicto es silencioso pero erosionante.</li><li><strong>Perfiles I muy altos:</strong> La velocidad y cambio constante de I agota a S.</li>';
+  else html+='<li><strong>Perfiles I altos:</strong> Chocan en metodología: I quiere improvisar, C quiere planificar.</li><li><strong>Perfiles D altos:</strong> D quiere avanzar rápido, C quiere revisar todo. Genera frustración mutua.</li>';
+  html+='</ul></div>';
+  html+='</div>';
+
+  return html;
 }
 
 // ========== PDF EXPORT ==========
