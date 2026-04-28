@@ -6,7 +6,6 @@
 <title>DISC Assessment — Hackea</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{--blue:#0090F8;--text-main:#2A2A2A;--text-body:#404040;--bg-slide:#EBECF0;--surface:#F3F3F3;--white:#FFFFFF;--black:#000000;--d-color:#E53935;--i-color:#FFC107;--s-color:#43A047;--c-color:#1E88E5;--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:var(--bg-slide);color:var(--text-body);min-height:100vh}
@@ -436,7 +435,7 @@ function showDetail(idx){
   html+='<p style="font-size:16px;color:#888;margin-bottom:16px">Haz clic en cada dimensión para ver el detalle completo.</p>';
   ['D','I','S','C'].forEach(function(k,ki){
     var p=PROFILES[k];var level=getLevel(scores[k]);
-    var ll=level==='alto'?'Alto':level==='medio'?'Medio':'Bajo';
+    var ll=getLevelLabel(scores[k]);
     var dotColor=level==='alto'?p.color:level==='medio'?'#FFC107':'#ccc';
     html+='<div class="accordion-header" onclick="toggleAccordion(this)" style="border-left:4px solid '+p.color+'">';
     html+='<h4><span style="color:'+p.color+'">'+k+'</span> — '+p.name+' <span style="font-weight:400;font-size:15px;color:#888">('+scores[k]+' pts · '+ll+')</span></h4>';
@@ -455,7 +454,7 @@ function showDetail(idx){
   html+='</div>';
 
   html+='</div>'; // close pdfContent
-  html+='<div class="actions-row" style="margin-top:24px"><button class="btn btn-primary" style="font-size:16px;padding:16px 40px" onclick="exportPDF('+idx+')">📄 Descargar PDF</button><button class="btn btn-secondary" style="font-size:16px;padding:16px 40px" onclick="window.print()">🖨️ Imprimir</button><button class="btn btn-secondary" style="font-size:16px;padding:16px 40px" onclick="renderSubmittedList()">← Volver a la lista</button></div>';
+  html+='<div class="actions-row" style="margin-top:24px"><button class="btn btn-primary" style="font-size:16px;padding:16px 40px" onclick="exportPDF('+idx+')">📄 Guardar como PDF</button><button class="btn btn-secondary" style="font-size:16px;padding:16px 40px" onclick="window.print()">🖨️ Imprimir</button><button class="btn btn-secondary" style="font-size:16px;padding:16px 40px" onclick="renderSubmittedList()">← Volver a la lista</button></div>';
   document.getElementById('reviewerList').classList.add('hidden');var detail=document.getElementById('reviewerDetail');detail.innerHTML=html;detail.classList.remove('hidden');window.scrollTo(0,0);
   setTimeout(function(){drawRadar(canvasId,scores);},100);
 }
@@ -703,89 +702,98 @@ function genEquipo(scores,combo){
 function exportPDF(idx){
   var r=submittedResults[idx];
   var element=document.getElementById('pdfContent-'+idx);
-  showToast('Preparando PDF...');
+  showToast('Preparando informe...');
 
-  // 1. Open all accordions
+  // Open all accordions temporarily
   element.querySelectorAll('.accordion-body').forEach(function(b){b.classList.add('open');});
   element.querySelectorAll('.accordion-header').forEach(function(h){h.classList.add('open');});
 
-  // 2. Convert canvas to image
+  // Convert canvas to image data
   var canvas=element.querySelector('canvas');
-  var imgReplace=null;
-  if(canvas){
-    imgReplace=document.createElement('img');
-    imgReplace.src=canvas.toDataURL('image/png');
-    imgReplace.style.cssText='width:260px;height:260px;display:block;margin:10px auto';
-    canvas.parentNode.replaceChild(imgReplace,canvas);
+  var radarImg='';
+  if(canvas) radarImg=canvas.toDataURL('image/png');
+
+  // Get inner HTML and fix the canvas area
+  var content=element.innerHTML;
+  if(radarImg){
+    content=content.replace(/<canvas[^>]*>[^<]*<\/canvas>/,'<img src="'+radarImg+'" style="width:260px;height:260px;display:block;margin:10px auto">');
   }
 
-  // 3. Add PDF-specific styles that force single column and fix clipping
-  var pdfStyle=document.createElement('style');
-  pdfStyle.id='pdfTempStyle';
-  pdfStyle.textContent=
-    '#pdfContent-'+idx+' { width: 750px !important; max-width: 750px !important; overflow: visible !important; }'+
-    '#pdfContent-'+idx+' .card { page-break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd; padding: 24px 28px !important; margin-bottom: 16px; overflow: visible !important; }'+
-    '#pdfContent-'+idx+' .card::before { display: none !important; }'+
-    '#pdfContent-'+idx+' .results-grid { grid-template-columns: repeat(4,1fr) !important; gap: 10px !important; }'+
-    '#pdfContent-'+idx+' .guide-card, #pdfContent-'+idx+' .compat-card { page-break-inside: avoid; }'+
-    '#pdfContent-'+idx+' .scenario-card, #pdfContent-'+idx+' .interview-card, #pdfContent-'+idx+' .alert-box { page-break-inside: avoid; }'+
-    '#pdfContent-'+idx+' .accordion-body { max-height: none !important; overflow: visible !important; padding: 16px 20px !important; display: block !important; }'+
-    '#pdfContent-'+idx+' .detail-grid { grid-template-columns: 1fr !important; }'+
-    '#pdfContent-'+idx+' .detail-meta-card { margin-bottom: 8px; }'+
-    '#pdfContent-'+idx+' div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }'+
-    '#pdfContent-'+idx+' div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }'+
-    '#pdfContent-'+idx+' div[style*="display:flex"][style*="gap:24px"] { flex-direction: column !important; }'+
-    '#pdfContent-'+idx+' div[style*="display:grid"] { grid-template-columns: 1fr !important; }'+
-    '#pdfContent-'+idx+' .results-grid { grid-template-columns: repeat(4,1fr) !important; }'+
-    '#pdfContent-'+idx+' .profile-combo span { font-size: 32px !important; }'+
-    '#pdfContent-'+idx+' .deco-circles { display: none !important; }'+
-    '#pdfContent-'+idx+' * { max-width: 750px !important; }';
-  document.head.appendChild(pdfStyle);
+  // Re-close accordions
+  element.querySelectorAll('.accordion-body').forEach(function(b){b.classList.remove('open');});
+  element.querySelectorAll('.accordion-header').forEach(function(h){h.classList.remove('open');});
 
-  // Small delay to let styles apply
-  setTimeout(function(){
-    var opt={
-      margin:[10,10,10,10],
-      filename:'DISC_'+r.name.replace(/\s+/g,'_')+'.pdf',
-      image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#FFFFFF',scrollY:0,width:770,windowWidth:770},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['css'],avoid:['.scenario-card','.interview-card','.alert-box','.guide-card','.compat-card','.detail-meta-card','.accordion-header']}
-    };
+  // Build clean print document
+  var printHTML='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>DISC - '+r.name+'</title>';
+  printHTML+='<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">';
+  printHTML+='<style>';
+  printHTML+='*{margin:0;padding:0;box-sizing:border-box}';
+  printHTML+='body{font-family:Arial,sans-serif;color:#404040;padding:20px 32px;max-width:780px;margin:0 auto;font-size:16px;line-height:1.7}';
+  printHTML+='h1{font-family:Poppins,sans-serif;font-weight:700;font-size:26px;color:#2A2A2A;margin-bottom:6px}';
+  printHTML+='h2{font-family:Poppins,sans-serif;font-weight:600;font-size:22px;color:#0090F8;margin-bottom:14px;margin-top:28px;padding-bottom:8px;border-bottom:2px solid #EBECF0}';
+  printHTML+='h3{font-family:Poppins,sans-serif;font-weight:600;font-size:18px;color:#2A2A2A;margin-bottom:8px}';
+  printHTML+='h4{font-family:Poppins,sans-serif;font-weight:600;font-size:17px;color:#2A2A2A;margin-bottom:8px}';
+  printHTML+='h5{font-family:Poppins,sans-serif;font-weight:600;font-size:15px;margin-bottom:6px}';
+  printHTML+='p{line-height:1.75;margin-bottom:12px;font-size:16px}';
+  printHTML+='ul{padding-left:20px;margin:8px 0 14px}li{margin-bottom:6px;line-height:1.65;font-size:15px}';
+  printHTML+='strong{color:#2A2A2A}';
+  printHTML+='.card{background:white;border:1px solid #ddd;border-radius:10px;padding:24px 28px;margin-bottom:18px;page-break-inside:avoid}';
+  printHTML+='.results-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}';
+  printHTML+='.score-card{padding:14px;border-radius:10px;text-align:center}';
+  printHTML+='.score-card.d{background:#fef2f2;border:1px solid #fca5a5}.score-card.i{background:#fffbeb;border:1px solid #fcd34d}.score-card.s{background:#f0fdf4;border:1px solid #86efac}.score-card.c{background:#eff6ff;border:1px solid #93c5fd}';
+  printHTML+='.score-letter{font-family:Poppins,sans-serif;font-weight:700;font-size:30px}';
+  printHTML+='.score-letter.d{color:#E53935}.score-letter.i{color:#FFC107}.score-letter.s{color:#43A047}.score-letter.c{color:#1E88E5}';
+  printHTML+='.score-value{font-family:Poppins,sans-serif;font-weight:600;font-size:20px;color:#2A2A2A}';
+  printHTML+='.score-label{font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}';
+  printHTML+='.score-bar-bg{height:5px;background:#eee;border-radius:3px;margin-top:8px}.score-bar-fill{height:100%;border-radius:3px}';
+  printHTML+='.score-bar-fill.d{background:#E53935}.score-bar-fill.i{background:#FFC107}.score-bar-fill.s{background:#43A047}.score-bar-fill.c{background:#1E88E5}';
+  printHTML+='.profile-combo{font-family:Poppins,sans-serif;font-weight:700;font-size:28px;display:flex;gap:4px;margin-bottom:8px}';
+  printHTML+='.scenario-card{padding:16px 20px;border-radius:10px;background:#f9fafb;margin-bottom:12px;border-left:3px solid #0090F8;page-break-inside:avoid}';
+  printHTML+='.interview-card{padding:16px 20px;border-radius:10px;background:#f9fafb;margin-bottom:12px;border-left:3px solid #0090F8;page-break-inside:avoid}';
+  printHTML+='.alert-box{padding:16px 20px;border-radius:10px;margin-bottom:10px;page-break-inside:avoid}';
+  printHTML+='.alert-critical{background:#fef2f2;border:1px solid #fca5a5}.alert-moderate{background:#fffbeb;border:1px solid #fcd34d}.alert-ok{background:#f0fdf4;border:1px solid #86efac}';
+  printHTML+='.guide-card{padding:18px 20px;border-radius:10px;background:white;border:1px solid #eee;margin-bottom:14px;page-break-inside:avoid}';
+  printHTML+='.compat-card{padding:18px 20px;border-radius:10px;background:white;border:1px solid #eee;margin-bottom:14px;page-break-inside:avoid}';
+  printHTML+='.fit-indicator{display:inline-block;padding:4px 14px;border-radius:16px;font-family:Poppins,sans-serif;font-weight:600;font-size:14px}';
+  printHTML+='.fit-high{background:#dcfce7;color:#166534}.fit-medium{background:#fef9c3;color:#854d0e}.fit-low{background:#fee2e2;color:#991b1b}';
+  printHTML+='.area-label{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#0090F8;font-weight:700;margin-bottom:4px}';
+  printHTML+='.question{font-size:16px;font-weight:600;color:#2A2A2A;margin-bottom:6px}.listen-for{font-size:14px;color:#666}';
+  printHTML+='.detail-meta-card{padding:14px 18px;border-radius:8px;background:#f9fafb;margin-bottom:8px}';
+  printHTML+='.accordion-header{padding:14px 18px;border-radius:10px;background:#f3f3f3;margin-bottom:4px}';
+  printHTML+='.accordion-header h4{margin:0;font-size:16px}.accordion-arrow{display:none}';
+  printHTML+='.accordion-body{padding:14px 18px !important;max-height:none !important;overflow:visible !important;display:block !important}';
+  // Force all grids to single column for print
+  printHTML+='div[style*="grid-template-columns: 1fr 1fr"],div[style*="grid-template-columns:1fr 1fr"]{display:block !important}';
+  printHTML+='div[style*="grid-template-columns: 1fr 1fr"] > *,div[style*="grid-template-columns:1fr 1fr"] > *{margin-bottom:14px !important}';
+  printHTML+='div[style*="display:flex"][style*="gap:24px"],div[style*="display:flex"][style*="gap:20px"]{display:block !important}';
+  printHTML+='div[style*="display:flex"][style*="gap:24px"] > *,div[style*="display:flex"][style*="gap:20px"] > *{margin-bottom:14px !important}';
+  printHTML+='div[style*="display:grid"][style*="gap:20px"]{display:block !important}';
+  printHTML+='div[style*="display:grid"][style*="gap:20px"] > *{margin-bottom:14px !important}';
+  printHTML+='.detail-grid{display:block !important}.detail-grid > *{margin-bottom:12px !important}';
+  printHTML+='@media print{body{padding:10px 20px}h2{margin-top:20px}.card{border:1px solid #ccc;box-shadow:none}}';
+  printHTML+='</style></head><body>';
+  printHTML+=content;
+  printHTML+='<div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid #ddd;font-size:13px;color:#999">Informe DISC generado por HACK<span style="color:#0090F8">EA</span> · info@hackea.pro</div>';
+  printHTML+='</body></html>';
 
-    html2pdf().set(opt).from(element).save().then(function(){
-      showToast('PDF descargado ✅');
-      cleanup();
-    }).catch(function(err){
-      showToast('Error al generar PDF');
-      console.error(err);
-      cleanup();
-    });
-  }, 300);
-
-  function cleanup(){
-    // Restore canvas
-    if(imgReplace&&imgReplace.parentNode){
-      var newCanvas=document.createElement('canvas');
-      newCanvas.width=300;newCanvas.height=300;
-      newCanvas.id='detailRadar-'+idx;
-      imgReplace.parentNode.replaceChild(newCanvas,imgReplace);
-      drawRadar(newCanvas.id,r.scores);
-    }
-    // Remove temp styles
-    var ts=document.getElementById('pdfTempStyle');
-    if(ts)ts.remove();
-    // Re-close accordions
-    element.querySelectorAll('.accordion-body').forEach(function(b){b.classList.remove('open');});
-    element.querySelectorAll('.accordion-header').forEach(function(h){h.classList.remove('open');});
-  }
+  // Open print window
+  var printWin=window.open('','_blank','width=800,height=600');
+  printWin.document.write(printHTML);
+  printWin.document.close();
+  printWin.onload=function(){
+    setTimeout(function(){
+      printWin.print();
+    },500);
+  };
+  showToast('Se abrió la ventana de impresión. Elige "Guardar como PDF" ✅');
 }
 
 // ========== HELPERS ==========
 function getCombo(s){return Object.entries(s).sort(function(a,b){return b[1]-a[1];}).filter(function(e){return e[1]>0;}).map(function(e){return e[0];});}
-function getLevel(s){return s>=15?'alto':s>=8?'medio':'bajo';}
-function getFitClass(d,score,ideal){const im={alto:3,'medio-alto':2.5,medio:2,'bajo-medio':1.5,bajo:1};const am={alto:3,medio:2,bajo:1};const diff=Math.abs((im[ideal]||2)-(am[getLevel(score)]||2));return diff<=0.5?'fit-high':diff<=1?'fit-medium':'fit-low';}
-function calcFitScore(scores,rf){let t=0;['D','I','S','C'].forEach(function(k){const fc=getFitClass(k,scores[k],rf.ideal[k]);t+=fc==='fit-high'?3:fc==='fit-medium'?2:1;});return t/4;}
+function getLevel(s){return s>=18?'alto':s>=13?'medio-alto':s>=8?'medio':s>=4?'bajo-medio':'bajo';}
+function getLevelLabel(s){var l=getLevel(s);return l==='alto'?'Alto':l==='medio-alto'?'Medio-Alto':l==='medio'?'Medio':l==='bajo-medio'?'Bajo-Medio':'Bajo';}
+function getFitClass(d,score,ideal){var map={alto:5,'medio-alto':4,medio:3,'bajo-medio':2,bajo:1};var actual=map[getLevel(score)]||3;var target=map[ideal]||3;var diff=Math.abs(target-actual);return diff<=1?'fit-high':diff<=2?'fit-medium':'fit-low';}
+function calcFitScore(scores,rf){var t=0;['D','I','S','C'].forEach(function(k){var fc=getFitClass(k,scores[k],rf.ideal[k]);t+=fc==='fit-high'?3:fc==='fit-medium'?2:1;});return t/4;}
 function generateRec(scores,combo,rf,fs){const c=combo.join('');if(fs>=2.5)return'El perfil '+c+' presenta un buen ajuste general para '+rf.label+'. Las fortalezas naturales se alinean con las competencias requeridas. Se recomienda potenciar las áreas de desarrollo mediante coaching o mentoría.';if(fs>=1.8)return'El perfil '+c+' tiene un ajuste parcial para '+rf.label+'. Hay dimensiones alineadas, pero existen brechas a considerar. Evaluar si son manejables con capacitación o representan un riesgo para el desempeño.';return'El perfil '+c+' presenta brechas importantes respecto al perfil ideal para '+rf.label+'. No descarta al candidato/a, pero sugiere necesidad de apoyo significativo. Considerar si el rol puede adaptarse a las fortalezas naturales.';}
 
 function drawRadar(cid,scores){const canvas=document.getElementById(cid);if(!canvas)return;const ctx=canvas.getContext('2d');const w=canvas.width,h=canvas.height;const cx=w/2,cy=h/2,r=130;ctx.clearRect(0,0,w,h);const labels=['D','I','S','C'];const colors=['#E53935','#FFC107','#43A047','#1E88E5'];const angles=labels.map(function(_,i){return(Math.PI*2*i/4)-Math.PI/2;});for(let l=1;l<=4;l++){ctx.beginPath();ctx.arc(cx,cy,r*l/4,0,Math.PI*2);ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;ctx.stroke();}angles.forEach(function(a){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.stroke();});const vals=labels.map(function(k){return scores[k]/28;});ctx.beginPath();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='rgba(0,144,248,0.15)';ctx.fill();ctx.strokeStyle='#0090F8';ctx.lineWidth=2.5;ctx.stroke();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle=colors[i];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();const lx=cx+Math.cos(angles[i])*(r+25),ly=cy+Math.sin(angles[i])*(r+25);ctx.font='bold 16px Poppins,sans-serif';ctx.fillStyle=colors[i];ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labels[i],lx,ly);ctx.font='12px Arial,sans-serif';ctx.fillStyle='#888';ctx.fillText(scores[labels[i]],lx,ly+16);});}
