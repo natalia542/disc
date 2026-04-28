@@ -664,8 +664,12 @@ function generateRec(scores,combo,rf,fs){const c=combo.join('');if(fs>=2.5)retur
 
 function drawRadar(cid,scores){const canvas=document.getElementById(cid);if(!canvas)return;const ctx=canvas.getContext('2d');const w=canvas.width,h=canvas.height;const cx=w/2,cy=h/2,r=130;ctx.clearRect(0,0,w,h);const labels=['D','I','S','C'];const colors=['#E53935','#FFC107','#43A047','#1E88E5'];const angles=labels.map(function(_,i){return(Math.PI*2*i/4)-Math.PI/2;});for(let l=1;l<=4;l++){ctx.beginPath();ctx.arc(cx,cy,r*l/4,0,Math.PI*2);ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;ctx.stroke();}angles.forEach(function(a){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.stroke();});const vals=labels.map(function(k){return scores[k]/28;});ctx.beginPath();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='rgba(0,144,248,0.15)';ctx.fill();ctx.strokeStyle='#0090F8';ctx.lineWidth=2.5;ctx.stroke();vals.forEach(function(v,i){const x=cx+Math.cos(angles[i])*r*v,y=cy+Math.sin(angles[i])*r*v;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle=colors[i];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();const lx=cx+Math.cos(angles[i])*(r+25),ly=cy+Math.sin(angles[i])*(r+25);ctx.font='bold 16px Poppins,sans-serif';ctx.fillStyle=colors[i];ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labels[i],lx,ly);ctx.font='12px Arial,sans-serif';ctx.fillStyle='#888';ctx.fillText(scores[labels[i]],lx,ly+16);});}
 
-// Auto-refresh every 30 seconds when on reviewer tab
-setInterval(function(){if(document.getElementById('tab-reviewer').classList.contains('active'))loadResults();},30000);
+// Auto-refresh every 30 seconds ONLY when viewing the list (not a person's detail)
+setInterval(function(){
+  var onReviewer = document.getElementById('tab-reviewer').classList.contains('active');
+  var detailHidden = document.getElementById('reviewerDetail').classList.contains('hidden');
+  if(onReviewer && detailHidden) loadResults();
+},30000);
 </script>
 </body>
 </html>
