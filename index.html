@@ -701,18 +701,69 @@ function genEquipo(scores,combo){
 
 // ========== PDF EXPORT ==========
 function exportPDF(idx){
-  const r=submittedResults[idx];
-  const element=document.getElementById('pdfContent-'+idx);
-  const opt={
-    margin:[10,10,10,10],
+  var r=submittedResults[idx];
+  var element=document.getElementById('pdfContent-'+idx);
+  showToast('Preparando PDF...');
+
+  // 1. Open all accordions so content is visible
+  element.querySelectorAll('.accordion-body').forEach(function(b){b.classList.add('open');});
+  element.querySelectorAll('.accordion-header').forEach(function(h){h.classList.add('open');});
+
+  // 2. Convert canvas to static image
+  var canvas=element.querySelector('canvas');
+  var imgReplace=null;
+  if(canvas){
+    imgReplace=document.createElement('img');
+    imgReplace.src=canvas.toDataURL('image/png');
+    imgReplace.style.cssText='max-width:300px;height:auto;display:block;margin:0 auto';
+    canvas.parentNode.replaceChild(imgReplace,canvas);
+  }
+
+  // 3. Add temporary PDF styles
+  var pdfStyle=document.createElement('style');
+  pdfStyle.id='pdfTempStyle';
+  pdfStyle.textContent=`
+    #pdfContent-${idx} .card { page-break-inside: avoid; margin-bottom: 16px; }
+    #pdfContent-${idx} .scenario-card,
+    #pdfContent-${idx} .interview-card,
+    #pdfContent-${idx} .alert-box,
+    #pdfContent-${idx} .guide-card,
+    #pdfContent-${idx} .compat-card { page-break-inside: avoid; }
+    #pdfContent-${idx} .accordion-body { max-height: none !important; overflow: visible !important; padding: 16px 24px 20px !important; display: block !important; }
+    #pdfContent-${idx} .results-grid { page-break-inside: avoid; }
+  `;
+  document.head.appendChild(pdfStyle);
+
+  // 4. Generate PDF
+  var opt={
+    margin:[12,12,12,12],
     filename:'DISC_'+r.name.replace(/\s+/g,'_')+'.pdf',
-    image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#EBECF0'},
+    image:{type:'jpeg',quality:0.95},
+    html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#FFFFFF',scrollY:0,windowWidth:1060},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:['avoid-all','css','legacy']}
+    pagebreak:{mode:['css'],avoid:['.card','.scenario-card','.interview-card','.alert-box','.guide-card','.compat-card','.accordion-header']}
   };
-  showToast('Generando PDF...');
-  html2pdf().set(opt).from(element).save().then(function(){showToast('PDF descargado');});
+
+  html2pdf().set(opt).from(element).save().then(function(){
+    showToast('PDF descargado ✅');
+    // 5. Restore canvas
+    if(imgReplace&&imgReplace.parentNode){
+      var newCanvas=document.createElement('canvas');
+      newCanvas.width=300;newCanvas.height=300;
+      newCanvas.id='detailRadar-'+idx;
+      imgReplace.parentNode.replaceChild(newCanvas,imgReplace);
+      drawRadar(newCanvas.id,r.scores);
+    }
+    // 6. Remove temp styles
+    var ts=document.getElementById('pdfTempStyle');
+    if(ts)ts.remove();
+    // 7. Re-close accordions
+    element.querySelectorAll('.accordion-body').forEach(function(b){b.classList.remove('open');});
+    element.querySelectorAll('.accordion-header').forEach(function(h){h.classList.remove('open');});
+  }).catch(function(err){
+    showToast('Error al generar PDF');
+    console.error(err);
+  });
 }
 
 // ========== HELPERS ==========
