@@ -27,7 +27,7 @@
 h1{font-family:'Poppins',sans-serif;font-weight:700;font-size:32px;color:var(--text-main);margin-bottom:8px}
 h2{font-family:'Poppins',sans-serif;font-weight:600;font-size:22px;color:var(--blue);margin-bottom:12px}
 h3{font-family:'Poppins',sans-serif;font-weight:600;font-size:18px;color:var(--text-main);margin-bottom:8px}
-p{line-height:1.65;margin-bottom:10px;font-size:15px}
+p{line-height:1.7;margin-bottom:10px;font-size:16px}
 .instructions{background:linear-gradient(135deg,rgba(0,144,248,.06),rgba(0,144,248,.02));border:1px solid rgba(0,144,248,.15);border-radius:var(--radius);padding:24px 28px;margin-bottom:24px}
 .disc-legend{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
 .disc-legend-item{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px}
@@ -74,7 +74,7 @@ input[type="radio"]:checked::after{content:'';position:absolute;width:8px;height
 .trait-section{margin:16px 0}.trait-title{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:8px}
 .trait-list{display:flex;flex-wrap:wrap;gap:6px}.trait-tag{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600}
 .interp-section{margin:20px 0;padding:20px 24px;background:var(--white);border-radius:var(--radius);border-left:4px solid var(--blue)}
-.interp-section h3{color:var(--blue);margin-bottom:10px}.interp-section ul{padding-left:18px}.interp-section li{margin-bottom:6px;line-height:1.55;font-size:14.5px}
+.interp-section h3{color:var(--blue);margin-bottom:10px}.interp-section ul{padding-left:18px}.interp-section li{margin-bottom:6px;line-height:1.6;font-size:15.5px}
 .fit-indicator{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px}
 .fit-high{background:rgba(67,160,71,.12);color:#2E7D32}.fit-medium{background:rgba(255,193,7,.15);color:#F57F17}.fit-low{background:rgba(229,57,53,.1);color:#C62828}
 .select-wrap{margin:16px 0}.select-wrap label{font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;color:var(--text-main);display:block;margin-bottom:6px}
@@ -329,7 +329,7 @@ function showDetail(idx){
 
   // ===== 3. ESCENARIOS CONDUCTUALES =====
   html+='<div class="card"><h2>🎭 Predicciones Conductuales</h2>';
-  html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Cómo es probable que se comporte esta persona en situaciones laborales concretas.</p>';
+  html+='<p style="color:#888;font-size:15px;margin-bottom:16px">Cómo es probable que se comporte esta persona en situaciones laborales concretas.</p>';
   html+=genBehavioralScenarios(scores,combo);
   html+='</div>';
 
@@ -345,7 +345,7 @@ function showDetail(idx){
 
     // ===== 5. PREGUNTAS DE ENTREVISTA =====
     html+='<div class="card"><h2>❓ Preguntas de Entrevista Sugeridas</h2>';
-    html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Preguntas diseñadas para explorar las brechas y riesgos identificados para este cargo.</p>';
+    html+='<p style="color:#888;font-size:15px;margin-bottom:16px">Preguntas diseñadas para explorar las brechas y riesgos identificados para este cargo.</p>';
     html+=genInterviewQuestions(scores,combo,role,rf);
     html+='</div>';
   }
@@ -355,12 +355,12 @@ function showDetail(idx){
   html+=(['D','I','S','C'].map(function(k){
     const p=PROFILES[k];const level=getLevel(scores[k]);
     const ll=level==='alto'?'🔴 Alto':level==='medio'?'🟡 Medio':'🟢 Bajo';
-    return'<div class="interp-section" style="border-left-color:'+p.color+'"><h3 style="color:'+p.color+'">'+k+' — '+p.name+' ('+scores[k]+' pts · '+ll+')</h3><p>'+p.desc+'</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px"><div><strong style="color:#2E7D32">✅ Fortalezas:</strong><ul style="margin-top:4px">'+p.strengths.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div><strong style="color:#E6A800">⚠️ Áreas de desarrollo:</strong><ul style="margin-top:4px">'+p.challenges.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div></div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px"><div><strong>💬 Comunicación:</strong><br>'+p.communication+'</div><div><strong>🔥 Motivadores:</strong><br>'+p.motivators+'</div><div><strong>😰 Estresores:</strong><br>'+p.stressors+'</div></div></div>';
+    return'<div class="interp-section" style="border-left-color:'+p.color+'"><h3 style="color:'+p.color+'">'+k+' — '+p.name+' ('+scores[k]+' pts · '+ll+')</h3><p>'+p.desc+'</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px"><div><strong style="color:#2E7D32">✅ Fortalezas:</strong><ul style="margin-top:4px">'+p.strengths.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div><div><strong style="color:#E6A800">⚠️ Áreas de desarrollo:</strong><ul style="margin-top:4px">'+p.challenges.map(function(s){return'<li>'+s+'</li>';}).join('')+'</ul></div></div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:15px"><div><strong>💬 Comunicación:</strong><br>'+p.communication+'</div><div><strong>🔥 Motivadores:</strong><br>'+p.motivators+'</div><div><strong>😰 Estresores:</strong><br>'+p.stressors+'</div></div></div>';
   }).join(''))+'</div>';
 
   // ===== 7. GUÍA DE GESTIÓN =====
   html+='<div class="card"><h2>🤝 Guía de Gestión</h2>';
-  html+='<p style="color:#888;font-size:13px;margin-bottom:16px">Recomendaciones concretas para liderar, motivar y comunicarse con esta persona.</p>';
+  html+='<p style="color:#888;font-size:15px;margin-bottom:16px">Recomendaciones concretas para liderar, motivar y comunicarse con esta persona.</p>';
   html+=genManagementGuide(scores,combo);
   html+='</div>';
 
@@ -471,7 +471,7 @@ function genBehavioralScenarios(scores,combo){
       'Organiza, planifica y establece estándares claros. Estilo metódico. Riesgo: puede ser percibido/a como frío/a o excesivamente controlador/a.'}
   ];
   scenarios.forEach(function(sc){
-    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><h3 style="color:#0090F8;font-size:15px">'+sc.icon+' '+sc.title+'</h3><p style="margin:0;font-size:14px">'+sc.behavior+'</p></div>';
+    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><h3 style="color:#0090F8;font-size:17px">'+sc.icon+' '+sc.title+'</h3><p style="margin:0;font-size:16px">'+sc.behavior+'</p></div>';
   });
   return html;
 }
@@ -539,12 +539,12 @@ function genAlerts(scores,combo,role,rf){
 
   if(critical.length>0){
     html+='<div style="margin-bottom:16px"><h3 style="color:#C62828;margin-bottom:10px">🔴 Alertas Críticas</h3>';
-    critical.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(229,57,53,.06);border:1px solid rgba(229,57,53,.15);border-radius:10px;margin-bottom:8px;font-size:14px;line-height:1.6">'+a+'</div>';});
+    critical.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(229,57,53,.06);border:1px solid rgba(229,57,53,.15);border-radius:10px;margin-bottom:8px;font-size:16px;line-height:1.7">'+a+'</div>';});
     html+='</div>';
   }
   if(moderate.length>0){
     html+='<div style="margin-bottom:16px"><h3 style="color:#F57F17;margin-bottom:10px">🟡 Alertas Moderadas</h3>';
-    moderate.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(255,193,7,.06);border:1px solid rgba(255,193,7,.2);border-radius:10px;margin-bottom:8px;font-size:14px;line-height:1.6">'+a+'</div>';});
+    moderate.forEach(function(a){html+='<div style="padding:14px 18px;background:rgba(255,193,7,.06);border:1px solid rgba(255,193,7,.2);border-radius:10px;margin-bottom:8px;font-size:16px;line-height:1.7">'+a+'</div>';});
     html+='</div>';
   }
   if(critical.length===0&&moderate.length===0){
@@ -571,7 +571,7 @@ function genInterviewQuestions(scores,combo,role,rf){
   questions.push({area:'Autoconocimiento',q:'Si le preguntara a tu jefe/a anterior cuál es tu mayor debilidad profesional, ¿qué me diría?',why:'Evaluar nivel de autoconocimiento y honestidad. Comparar con el perfil DISC para ver si hay coherencia.'});
 
   questions.forEach(function(q){
-    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600;margin-bottom:4px">'+q.area+'</div><p style="font-weight:600;font-size:15px;color:#2A2A2A;margin-bottom:6px">"'+q.q+'"</p><p style="font-size:13px;color:#888;margin:0"><strong>Qué escuchar:</strong> '+q.why+'</p></div>';
+    html+='<div class="interp-section" style="border-left-color:#0090F8;margin-bottom:12px"><div style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600;margin-bottom:4px">'+q.area+'</div><p style="font-weight:600;font-size:17px;color:#2A2A2A;margin-bottom:6px">"'+q.q+'"</p><p style="font-size:13px;color:#888;margin:0"><strong>Qué escuchar:</strong> '+q.why+'</p></div>';
   });
   return html;
 }
@@ -582,7 +582,7 @@ function genManagementGuide(scores,combo){
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
 
   // How to give feedback
-  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:15px">💬 Cómo darle feedback</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:16px">💬 Cómo darle feedback</h3><ul>';
   if(d>=15) html+='<li>Sé directo/a y breve. No des muchas vueltas.</li><li>Enfoca en resultados, no en emociones.</li><li>Déjale proponer la solución.</li>';
   else if(i>=15) html+='<li>Empieza reconociendo lo positivo.</li><li>Da el feedback en privado, nunca frente a otros.</li><li>Conecta la mejora con su visibilidad o impacto.</li>';
   else if(s>=15) html+='<li>Sé empático/a y da contexto del por qué.</li><li>No lo/la sorprendas; anticipa el tema.</li><li>Dale tiempo para procesar antes de pedir una respuesta.</li>';
@@ -590,7 +590,7 @@ function genManagementGuide(scores,combo){
   html+='</ul></div>';
 
   // How to motivate
-  html+='<div class="interp-section" style="border-left-color:#FFC107"><h3 style="color:#E6A800;font-size:15px">🔥 Cómo motivarle</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#FFC107"><h3 style="color:#E6A800;font-size:16px">🔥 Cómo motivarle</h3><ul>';
   if(d>=15) html+='<li>Darle desafíos y autonomía.</li><li>Reconocer logros con impacto visible.</li><li>Ofrecerle oportunidades de crecimiento.</li>';
   else if(i>=15) html+='<li>Reconocimiento público y frecuente.</li><li>Involucrarlo/a en proyectos sociales o creativos.</li><li>Darle variedad y contacto con personas.</li>';
   else if(s>=15) html+='<li>Estabilidad y previsibilidad.</li><li>Reconocimiento sincero y personal (no público).</li><li>Relación de confianza con su líder.</li>';
@@ -598,7 +598,7 @@ function genManagementGuide(scores,combo){
   html+='</ul></div>';
 
   // What to avoid
-  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:15px">🚫 Qué evitar</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:16px">🚫 Qué evitar</h3><ul>';
   if(d>=15) html+='<li>Microgestionar o controlar cada paso.</li><li>Ignorar sus ideas o no dejarlo/a participar en decisiones.</li><li>Burocracia innecesaria.</li>';
   else if(i>=15) html+='<li>Aislarlo/a en tareas solitarias por mucho tiempo.</li><li>Ignorar sus aportes o no darle crédito.</li><li>Ambiente rígido sin espacio para socializar.</li>';
   else if(s>=15) html+='<li>Cambios sorpresivos sin explicación.</li><li>Presión agresiva o confrontación pública.</li><li>Pedirle decisiones rápidas sin información.</li>';
@@ -606,7 +606,7 @@ function genManagementGuide(scores,combo){
   html+='</ul></div>';
 
   // Communication
-  html+='<div class="interp-section" style="border-left-color:#1E88E5"><h3 style="color:#1E88E5;font-size:15px">📧 Cómo comunicarse</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#1E88E5"><h3 style="color:#1E88E5;font-size:16px">📧 Cómo comunicarse</h3><ul>';
   if(d>=15) html+='<li>Emails cortos, con el punto al inicio.</li><li>Reuniones breves con agenda clara.</li><li>Ir al grano, sin small talk excesivo.</li>';
   else if(i>=15) html+='<li>Conversación antes que email para temas importantes.</li><li>Dejar espacio para que se exprese.</li><li>Tono cercano y entusiasta.</li>';
   else if(s>=15) html+='<li>Dar contexto completo, no solo instrucciones.</li><li>Preguntar cómo se siente con los cambios.</li><li>Seguimiento gentil pero constante.</li>';
@@ -621,14 +621,14 @@ function genTeamCompatibility(scores,combo){
   let html='';const p=combo[0],s2=combo[1]||p;
 
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
-  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:15px">✅ Se complementa bien con</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#43A047"><h3 style="color:#43A047;font-size:16px">✅ Se complementa bien con</h3><ul>';
   if(p==='D') html+='<li><strong>Perfiles S:</strong> Aportan la paciencia y estabilidad que D necesita. Equilibran su impulsividad.</li><li><strong>Perfiles C:</strong> Le dan la rigurosidad en los detalles que D tiende a ignorar.</li>';
   else if(p==='I') html+='<li><strong>Perfiles C:</strong> Le dan estructura y seguimiento a las ideas de I.</li><li><strong>Perfiles S:</strong> Ejecutan de manera confiable lo que I propone.</li>';
   else if(p==='S') html+='<li><strong>Perfiles D:</strong> Le dan dirección y decisión cuando S duda.</li><li><strong>Perfiles I:</strong> Le aportan energía y entusiasmo para salir de la zona de confort.</li>';
   else html+='<li><strong>Perfiles I:</strong> Le aportan la comunicación y flexibilidad que C necesita.</li><li><strong>Perfiles D:</strong> Empujan a la acción cuando C se pierde en el análisis.</li>';
   html+='</ul></div>';
 
-  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:15px">⚡ Fricción potencial con</h3><ul>';
+  html+='<div class="interp-section" style="border-left-color:#E53935"><h3 style="color:#E53935;font-size:16px">⚡ Fricción potencial con</h3><ul>';
   if(p==='D') html+='<li><strong>Otros D:</strong> Lucha de poder. Dos D en el mismo equipo compiten por el control.</li><li><strong>Perfiles S muy altos:</strong> D los percibe como lentos; S percibe a D como agresivo/a.</li>';
   else if(p==='I') html+='<li><strong>Perfiles C altos:</strong> C percibe a I como superficial; I percibe a C como aguafiestas.</li><li><strong>Otros I:</strong> Mucha energía pero poca ejecución. Todos hablan, nadie hace.</li>';
   else if(p==='S') html+='<li><strong>Perfiles D altos:</strong> D presiona y S se repliega. El conflicto es silencioso pero erosionante.</li><li><strong>Perfiles I muy altos:</strong> La velocidad y cambio constante de I agota a S.</li>';
