@@ -790,7 +790,7 @@ function exportPDF(idx){
 
 // ========== HELPERS ==========
 function getCombo(s){return Object.entries(s).sort(function(a,b){return b[1]-a[1];}).filter(function(e){return e[1]>0;}).map(function(e){return e[0];});}
-function getLevel(s){return s>=18?'alto':s>=13?'medio-alto':s>=8?'medio':s>=4?'bajo-medio':'bajo';}
+function getLevel(s){return s>=14?'alto':s>=10?'medio-alto':s>=7?'medio':s>=4?'bajo-medio':'bajo';}
 function getLevelLabel(s){var l=getLevel(s);return l==='alto'?'Alto':l==='medio-alto'?'Medio-Alto':l==='medio'?'Medio':l==='bajo-medio'?'Bajo-Medio':'Bajo';}
 function getFitClass(d,score,ideal){var map={alto:5,'medio-alto':4,medio:3,'bajo-medio':2,bajo:1};var actual=map[getLevel(score)]||3;var target=map[ideal]||3;var diff=Math.abs(target-actual);return diff<=1?'fit-high':diff<=2?'fit-medium':'fit-low';}
 function calcFitScore(scores,rf){var t=0;['D','I','S','C'].forEach(function(k){var fc=getFitClass(k,scores[k],rf.ideal[k]);t+=fc==='fit-high'?3:fc==='fit-medium'?2:1;});return t/4;}
